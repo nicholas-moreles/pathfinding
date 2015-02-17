@@ -48,6 +48,19 @@ function Game(c)
     ctx.fillStyle = Colors.CANVAS;
     ctx.fillRect(0, 0, width * CELL_SIZE, height * CELL_SIZE);
     
+    // draw walls
+    for (var x = 0; x < width; ++x)
+    {
+      for (var y = 0; y < height; ++y)
+      {
+        if (walls[x][y])
+        {
+          ctx.fillStyle = Colors.WALL;
+          ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        }
+      }
+    }
+    
     // draw goal
     ctx.fillStyle = Colors.GOAL;
     ctx.fillRect(goal.x * CELL_SIZE, goal.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
@@ -58,8 +71,8 @@ function Game(c)
     {
       var dirX = path[path.length-1].x - hero.x;
       var dirY = path[path.length-1].y - hero.y;
-      var scaledHeroX = hero.x * CELL_SIZE;
-      var scaledHeroY = hero.y * CELL_SIZE;
+      var scaledHeroX = hero.drawX;
+      var scaledHeroY = hero.drawY;
       
       ctx.beginPath();
       if (dirX > 0)
@@ -133,19 +146,6 @@ function Game(c)
     else
     {
       ctx.fillRect(hero.x * CELL_SIZE, hero.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-    }
-    
-    // draw walls
-    for (var x = 0; x < width; ++x)
-    {
-      for (var y = 0; y < height; ++y)
-      {
-        if (walls[x][y])
-        {
-          ctx.fillStyle = Colors.WALL;
-          ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-        }
-      }
     }
   }
   
@@ -263,8 +263,7 @@ function Game(c)
     gameOver(false);
   }
   
-  function update(path, deltaT) {
-    console.log(deltaT);
+  function update(path) {
     if (path.length > 0)
     {
       var next = path.pop();
@@ -324,15 +323,36 @@ function Game(c)
     $("#start-pause-button").html('Pause');
     
     var lastFrame = +new Date;
+    var currX = hero.drawX;
+    var currY = hero.drawY;
+    var nextX = path.length > 0 ? path[path.length-1].x * CELL_SIZE : hero.drawX;
+    var nextY = path.length > 0 ? path[path.length-1].y * CELL_SIZE : hero.drawY;
     
     time = setInterval(function() { // execute function below every 16ms
       var now = +new Date;
       var deltaT = now - lastFrame;
-      lastFrame = now;
       
-      update(path, deltaT * 0.01);
+      if (deltaT > 150)
+      {
+        // move to next cell
+        deltaT -= 150;
+        lastFrame = now;
+        update(path);
+        
+        currX = hero.drawX;
+        currY = hero.drawY;
+        if (path.length > 0)
+        {
+          nextX = path[path.length-1].x * CELL_SIZE;
+          nextY = path[path.length-1].y * CELL_SIZE;
+        }
+      }
+      
+      hero.drawX = currX + (deltaT / 150) * (nextX - currX);
+      hero.drawY = currY + (deltaT / 150) * (nextY - currY);
+      
       draw();
-    }, 100); // 16 for smooth animation
+    }, 10); // 16 for smooth animation
   }
   
   function pause() {
@@ -357,6 +377,8 @@ function Game(c)
       
     hero.x = 0;
     hero.y = 0;
+    hero.drawX = 0;
+    hero.drawY = 0;
     goal.x = width - 1;
     goal.y = height - 1;
     
@@ -368,6 +390,9 @@ function Game(c)
         walls[x][y] = false;
       }
     }
+    
+    // remove the path
+    path = [];
     
     draw();
   }
