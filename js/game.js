@@ -35,12 +35,6 @@ function Game(c)
     this.x = x;
     this.y = y;
   }
-  
-  function drawWall(pos)
-  {
-    ctx.fillStyle = Colors.WALL;
-    ctx.fillRect(blob.x, blob.y, CELL_SIZE, CELL_SIZE);
-  }
 
   function draw()
   {
