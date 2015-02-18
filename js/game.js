@@ -320,17 +320,21 @@ function Game(c)
     var lastFrame = +new Date;
     var currX = hero.drawX;
     var currY = hero.drawY;
-    var nextX = path.length > 0 ? path[path.length-1].x * CELL_SIZE : hero.drawX;
-    var nextY = path.length > 0 ? path[path.length-1].y * CELL_SIZE : hero.drawY;
+    var nextCell = path.length > 0 ? path[path.length-1] : hero;
+    var nextX = nextCell.x * CELL_SIZE;
+    var nextY = nextCell.y * CELL_SIZE;
+    var dirX = nextCell.x - hero.x;
+    var dirY = nextCell.y - hero.y;
+    var timeBetweenCells = (dirX === 0 || dirY === 0) ? 150 : 210;
     
     time = setInterval(function() { // execute function below every 16ms
       var now = +new Date;
       var deltaT = now - lastFrame;
       
-      if (deltaT > 150)
+      if (deltaT > timeBetweenCells)
       {
         // move to next cell
-        deltaT -= 150;
+        deltaT -= timeBetweenCells;
         lastFrame = now;
         update(path);
         
@@ -338,13 +342,17 @@ function Game(c)
         currY = hero.drawY;
         if (path.length > 0)
         {
-          nextX = path[path.length-1].x * CELL_SIZE;
-          nextY = path[path.length-1].y * CELL_SIZE;
+          nextCell = path[path.length-1]
+          nextX = nextCell.x * CELL_SIZE;
+          nextY = nextCell.y * CELL_SIZE;
+          dirX = nextCell.x - hero.x;
+          dirY = nextCell.y - hero.y;
+          timeBetweenCells = (dirX === 0 || dirY === 0) ? 150 : 210;
         }
       }
       
-      hero.drawX = currX + (deltaT / 150) * (nextX - currX);
-      hero.drawY = currY + (deltaT / 150) * (nextY - currY);
+      hero.drawX = currX + (deltaT / timeBetweenCells) * (nextX - currX);
+      hero.drawY = currY + (deltaT / timeBetweenCells) * (nextY - currY);
       
       draw();
     }, 10); // 16 for smooth animation
