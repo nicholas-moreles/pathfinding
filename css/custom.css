@@ -5,3 +5,46 @@
   display: block;
   border: 1px solid black;
 }
+
+#wrapper
+{
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  overflow: auto;
+  width: 800px;
+}
+
+#canvas-column
+{
+  display: block;
+  float: left;
+  width: 660px;
+}
+
+#side-buttons-column
+{
+  position: relative;
+  display: block;
+  float: left;
+  width: 140px;
+  height: 640px;
+}
+
+#reset-button
+{
+  white-space: normal;
+}
+
+#control-buttons
+{
+  width: 100%;
+}
+
+#selector-buttons
+{
+  position: absolute;
+  width: 100%;
+  left: 0;
+  bottom: 0;
+}

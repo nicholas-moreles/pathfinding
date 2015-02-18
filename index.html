@@ -21,11 +21,27 @@
     <div class="container-fluid">
       <h1 class="text-center">Realtime Pathfinding</h1>
       
-      <canvas id="game-canvas" width="640" height="640"></canvas>
+      <div id="wrapper">
       
+        <div id="canvas-column"><canvas id="game-canvas" width="640" height="640"></canvas></div>
+        
+        <div id="side-buttons-column">
+          <div id="control-buttons">
+            <button class="btn btn-block btn-success" id="start-pause-button">Start</button>
+            <button class="btn btn-block btn-warning" id="reset-button">Reset</button>
+          </div>
+          <div id="selector-buttons">
+            <h4 class="text-center">Left Click Action</h4>
+            <button class="btn btn-block btn-info">Add Wall</button>
+            <button class="btn btn-block">Erase Wall</button>
+            <button class="btn btn-block">Move Hero</button>
+            <button class="btn btn-block">Move Goal</button>
+          </div>
+        </div>
+      </div>
+        
       <div class="text-center">
-        <button class="btn-success" id="start-pause-button">Start</button>
-        <button class="btn-warning" id="reset-button">Reset</button>
+        
       </div>
     </div>
     

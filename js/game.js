@@ -43,13 +43,13 @@ function Game(c)
     ctx.fillRect(0, 0, width * CELL_SIZE, height * CELL_SIZE);
     
     // draw walls
+    ctx.fillStyle = Colors.WALL;
     for (var x = 0; x < width; ++x)
     {
       for (var y = 0; y < height; ++y)
       {
         if (walls[x][y])
         {
-          ctx.fillStyle = Colors.WALL;
           ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         }
       }
@@ -150,7 +150,7 @@ function Game(c)
           && !(goal.x === x && goal.y === y))
     {
       walls[x][y] = true;
-        draw();
+      draw();
     }
   }
   
@@ -192,6 +192,7 @@ function Game(c)
           }
         }
       }
+
       return children;
     };   
     
@@ -410,13 +411,13 @@ function Game(c)
     {
       $("#start-pause-button").hide();
       $("#reset-button").removeClass("btn-warning").addClass("btn-success");
-      $("#reset-button").html('Game over! The goal was found! Click here to play again!');
+      $("#reset-button").html('Game over! The goal was found! Click to play again!');
     }
     else
     {
       $("#start-pause-button").hide();
       $("#reset-button").removeClass("btn-warning").addClass("btn-danger");
-      $("#reset-button").html('Game over! No path to the goal exists! Click here to play again!');
+      $("#reset-button").html('Game over! No path to the goal exists! Click to play again!');
     }
   }
   
