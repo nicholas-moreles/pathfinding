@@ -147,7 +147,8 @@ function Game(c)
   {
     if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height
           && !walls[x][y] && !(hero.x === x && hero.y === y)
-          && !(goal.x === x && goal.y === y))
+          && !(goal.x === x && goal.y === y)
+          && (path.length === 0 || !(path[path.length-1].x === x && path[path.length-1].y === y)))
     {
       walls[x][y] = true;
       draw();
