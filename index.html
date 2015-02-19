@@ -5,7 +5,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Realtime Pathfinding</title>
-
     <!-- Bootstrap -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="css/custom.css">
@@ -20,11 +19,20 @@
   <body>
     <div class="container-fluid">
       <h1 class="text-center">Realtime Pathfinding</h1>
-      
       <div id="wrapper">
-      
-        <div id="canvas-column"><canvas id="game-canvas" width="640" height="640"></canvas></div>
-        
+        <div id="canvas-column">
+          <canvas id="game-canvas" width="640" height="640"></canvas>
+          <div class="text-center">
+            <ul class="list-inline">
+              <li><strong>Space:</strong> start/pause</li>
+              <li><strong>Enter:</strong> reset</li>
+              <li><strong>A:</strong> add walls</li>
+              <li><strong>R:</strong> remove walls</li>
+              <li><strong>H:</strong> move hero</li>
+              <li><strong>G:</strong> move goal</li>
+            </ul>
+          </div>
+        </div>
         <div id="side-buttons-column">
           <div id="control-buttons">
             <button class="btn btn-block btn-success" id="start-pause-button">Start</button>
@@ -32,16 +40,12 @@
           </div>
           <div id="selector-buttons">
             <h4 class="text-center">Left Click Action</h4>
-            <button class="btn btn-block btn-info">Add Wall</button>
-            <button class="btn btn-block">Erase Wall</button>
-            <button class="btn btn-block">Move Hero</button>
-            <button class="btn btn-block">Move Goal</button>
+            <button class="btn btn-block btn-info" id="add-walls-button">Add Walls</button>
+            <button class="btn btn-block" id="remove-walls-button">Remove Walls</button>
+            <button class="btn btn-block" id="move-hero-button">Move Hero</button>
+            <button class="btn btn-block" id="move-goal-button">Move Goal</button>
           </div>
         </div>
-      </div>
-        
-      <div class="text-center">
-        
       </div>
     </div>
     

@@ -12,6 +12,16 @@ Colors = Object.freeze({HERO: "#cf5300",
                         WALL: "grey",
                         CANVAS: "white"
                        });
+Selected = Object.freeze({ADD_WALLS: 0,
+                          REMOVE_WALLS: 1,
+                          MOVE_HERO: 2,
+                          MOVE_GOAL: 3
+                         });
+KeyCodes = Object.freeze({RESET: 13, // enter
+                          TOGGLE: 32, // space 
+                          ADD_WALLS: 65, // A
+                          REMOVE_WALLS: 82 // R
+                         });
 
 function Game(c)
 {
@@ -153,6 +163,15 @@ function Game(c)
           && (path.length === 0 || !(path[path.length-1].x === x && path[path.length-1].y === y)))
     {
       walls[x][y] = true;
+      draw();
+    }
+  }
+  
+  function removeWall(x, y)
+  {
+    if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height && walls[x][y])
+    {
+      walls[x][y] = false;
       draw();
     }
   }
@@ -449,6 +468,7 @@ function Game(c)
   return {
     init: init,
     addWall: addWall,
+    removeWall: removeWall,
     reset: reset,
     isRunning: isRunning,
     needsReset: needsReset,
@@ -463,6 +483,11 @@ $(document).ready(function() {
   var game = Game(canvas);
   var mousedown = false;
   var gameWasRunning = false;
+  var selectedButton = Selected.ADD_WALLS;
+  var keyDown = {RESET: false,
+                 TOGGLE: false,
+                 ADD_WALLS: false,
+                 REMOVE_WALLS: false};
   
   game.init();
   
@@ -470,9 +495,18 @@ $(document).ready(function() {
     {
       if (mousedown && !game.needsReset())
       {
-        x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
-        y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
-        game.addWall(x, y);
+        if (selectedButton === Selected.ADD_WALLS)
+        {
+          var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
+          var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
+          game.addWall(x, y);
+        }
+        else if (selectedButton === Selected.REMOVE_WALLS)
+        {
+          var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
+          var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
+          game.removeWall(x, y);
+        }
       }
     });
     
@@ -484,9 +518,20 @@ $(document).ready(function() {
         game.toggle();
         gameWasRunning = true;
       }
-      x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
-      y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
-      game.addWall(x, y);
+      
+      if (selectedButton === Selected.ADD_WALLS)
+      {
+        var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
+        var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
+        game.addWall(x, y);
+      }
+      else if (selectedButton === Selected.REMOVE_WALLS)
+      {
+        var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
+        var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
+        game.removeWall(x, y);
+      }
+      
     });
     
   $(window).mouseup(function(event)
@@ -499,11 +544,92 @@ $(document).ready(function() {
       }
     });
   
-  $("#start-pause-button").on("click", function(event) {
+  $("#start-pause-button").on("click", function(event)
+  {
     game.toggle();
   });
   
-  $("#reset-button").on("click", function(event) {
+  $("#reset-button").on("click", function(event)
+  {
     game.reset();
+  });
+  
+  function select(choice)
+  {
+    if (!game.needsReset())
+    {
+      $("#add-walls-button").removeClass("btn-info");
+      $("#remove-walls-button").removeClass("btn-info");
+      $("#move-hero-button").removeClass("btn-info");
+      $("#move-goal-button").removeClass("btn-info");
+      if (choice === Selected.ADD_WALLS)
+      {
+        $("#add-walls-button").addClass("btn-info");
+        selectedButton = Selected.ADD_WALLS;
+      }
+      else if (choice === Selected.REMOVE_WALLS)
+      {
+        $("#remove-walls-button").addClass("btn-info");
+        selectedButton = Selected.REMOVE_WALLS;
+      }
+    }
+  }
+  
+  $("#add-walls-button").on("click", function(event)
+  {
+    select(Selected.ADD_WALLS);
+  });
+  
+  $("#remove-walls-button").on("click", function(event)
+  {
+    select(Selected.REMOVE_WALLS);
+  });
+  
+  // keyboard shortcuts
+  $(document).keydown(function(event)
+  {
+    if (event.which === KeyCodes.RESET && !keyDown.RESET)
+    {
+      keyDown.RESET = true;
+      game.reset();
+    }
+    else if (event.which === KeyCodes.TOGGLE && !keyDown.TOGGLE)
+    {
+      if (!game.needsReset())
+      {
+        keyDown.TOGGLE = true;
+        game.toggle();
+      }
+    }
+    else if (event.which === KeyCodes.ADD_WALLS && !keyDown.ADD_WALLS)
+    {
+      keyDown.ADD_WALLS = true;
+      select(Selected.ADD_WALLS);
+    }
+    else if (event.which === KeyCodes.REMOVE_WALLS && !keyDown.REMOVE_WALLS)
+    {
+      keyDown.REMOVE_WALLS = true;
+      select(Selected.REMOVE_WALLS);
+    }
+  });
+  
+  $(document).keyup(function(event)
+  {
+    if (event.which === KeyCodes.RESET)
+    {
+      keyDown.RESET = false;
+    }
+    else if (event.which === KeyCodes.TOGGLE)
+    {
+      keyDown.TOGGLE = false;
+    }
+    else if (event.which === KeyCodes.ADD_WALLS)
+    {
+      keyDown.ADD_WALLS = false;
+    }
+    else if (event.which === KeyCodes.REMOVE_WALLS)
+    {
+      keyDown.REMOVE_WALLS = false;
+    }
   });
 });
