@@ -1,7 +1,11 @@
 goog.require('goog.structs.PriorityQueue');
 
 CELL_SIZE = 16; // must be divisible evenly by the canvas width and height
-NORM_COST = 10; // horizontal or vertical move
+OFFSET_STR_SMALL = 2;
+OFFSET_STR_LARGE = 14;
+OFFSET_DIAG_SMALL = 8.5;
+OFFSET_DIAG_LARGE = 7.5;
+STR_COST = 10; // horizontal or vertical move
 DIAG_COST = 14; // diagonal move
 Colors = Object.freeze({HERO: "#cf5300",
                         GOAL: "green",
@@ -65,8 +69,6 @@ function Game(c)
     {
       var dirX = path[path.length-1].x - hero.x;
       var dirY = path[path.length-1].y - hero.y;
-      var scaledHeroX = hero.drawX;
-      var scaledHeroY = hero.drawY;
       
       ctx.beginPath();
       if (dirX > 0)
@@ -74,23 +76,23 @@ function Game(c)
         if (dirY > 0)
         {
           // down-right
-          ctx.moveTo(scaledHeroX + CELL_SIZE, scaledHeroY);
-          ctx.lineTo(scaledHeroX, scaledHeroY + CELL_SIZE);
-          ctx.lineTo(scaledHeroX + CELL_SIZE, scaledHeroY + CELL_SIZE);
+          ctx.moveTo(hero.drawX + OFFSET_DIAG_SMALL, hero.drawY);
+          ctx.lineTo(hero.drawX, hero.drawY + OFFSET_DIAG_SMALL);
+          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + CELL_SIZE);
         }
         else if (dirY < 0)
         {
           // up-right
-          ctx.moveTo(scaledHeroX, scaledHeroY);
-          ctx.lineTo(scaledHeroX + CELL_SIZE, scaledHeroY);
-          ctx.lineTo(scaledHeroX + CELL_SIZE, scaledHeroY + CELL_SIZE);
+          ctx.moveTo(hero.drawX, hero.drawY + OFFSET_DIAG_LARGE);
+          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY);
+          ctx.lineTo(hero.drawX + OFFSET_DIAG_SMALL, hero.drawY + CELL_SIZE);
         }
         else
         {
           // right
-          ctx.moveTo(scaledHeroX, scaledHeroY);
-          ctx.lineTo(scaledHeroX, scaledHeroY + CELL_SIZE);
-          ctx.lineTo(scaledHeroX + CELL_SIZE, scaledHeroY + CELL_SIZE/2);
+          ctx.moveTo(hero.drawX, hero.drawY + OFFSET_STR_SMALL);
+          ctx.lineTo(hero.drawX, hero.drawY + OFFSET_STR_LARGE);
+          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + CELL_SIZE/2);
         }
       }
       else if (dirX <0)
@@ -98,23 +100,23 @@ function Game(c)
         if (dirY > 0)
         {
           // down-left
-          ctx.moveTo(scaledHeroX, scaledHeroY);
-          ctx.lineTo(scaledHeroX + CELL_SIZE, scaledHeroY);
-          ctx.lineTo(scaledHeroX + CELL_SIZE, scaledHeroY + CELL_SIZE);
+          ctx.moveTo(hero.drawX + OFFSET_DIAG_LARGE, hero.drawY);
+          ctx.lineTo(hero.drawX, hero.drawY + CELL_SIZE);
+          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_DIAG_SMALL);
         }
         else if (dirY < 0)
         {
           // up-left
-          ctx.moveTo(scaledHeroX, scaledHeroY);
-          ctx.lineTo(scaledHeroX + CELL_SIZE, scaledHeroY);
-          ctx.lineTo(scaledHeroX, scaledHeroY + CELL_SIZE);
+          ctx.moveTo(hero.drawX, hero.drawY);
+          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_DIAG_LARGE);
+          ctx.lineTo(hero.drawX + OFFSET_DIAG_LARGE, hero.drawY + CELL_SIZE);
         }
         else
         {
           // left
-          ctx.moveTo(scaledHeroX + CELL_SIZE, scaledHeroY);
-          ctx.lineTo(scaledHeroX + CELL_SIZE, scaledHeroY + CELL_SIZE);
-          ctx.lineTo(scaledHeroX, scaledHeroY + CELL_SIZE/2);
+          ctx.moveTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_STR_SMALL);
+          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_STR_LARGE);
+          ctx.lineTo(hero.drawX, hero.drawY + CELL_SIZE/2);
         }
       }
       else
@@ -122,16 +124,16 @@ function Game(c)
         if (dirY > 0)
         {
           // down
-          ctx.moveTo(scaledHeroX, scaledHeroY);
-          ctx.lineTo(scaledHeroX + CELL_SIZE, scaledHeroY);
-          ctx.lineTo(scaledHeroX + CELL_SIZE/2, scaledHeroY + CELL_SIZE);
+          ctx.moveTo(hero.drawX + OFFSET_STR_SMALL, hero.drawY);
+          ctx.lineTo(hero.drawX + OFFSET_STR_LARGE, hero.drawY);
+          ctx.lineTo(hero.drawX + CELL_SIZE/2, hero.drawY + CELL_SIZE);
         }
         else
         {
           // up
-          ctx.moveTo(scaledHeroX, scaledHeroY + CELL_SIZE);
-          ctx.lineTo(scaledHeroX + CELL_SIZE, scaledHeroY + CELL_SIZE);
-          ctx.lineTo(scaledHeroX + CELL_SIZE/2, scaledHeroY);
+          ctx.moveTo(hero.drawX + OFFSET_STR_SMALL, hero.drawY + CELL_SIZE);
+          ctx.lineTo(hero.drawX + OFFSET_STR_LARGE, hero.drawY + CELL_SIZE);
+          ctx.lineTo(hero.drawX + CELL_SIZE/2, hero.drawY);
         }
       }
       ctx.closePath();
@@ -164,7 +166,7 @@ function Game(c)
     
     function mdHeuristic(x1, y1, x2, y2)
     {
-      return (Math.abs(x1 - x2) + Math.abs(y1 - y2)) * NORM_COST;
+      return (Math.abs(x1 - x2) + Math.abs(y1 - y2)) * STR_COST;
     }
     
     function Node(x, y, cost, parent)
@@ -188,7 +190,7 @@ function Game(c)
           
           if (isValidChild(nextX, nextY))
           {
-            var nextMoveCost = this.cost + (xOffset === 0 || yOffset === 0 ? NORM_COST : DIAG_COST);
+            var nextMoveCost = this.cost + (xOffset === 0 || yOffset === 0 ? STR_COST : DIAG_COST);
             children.push(new Node(nextX, nextY, nextMoveCost, this));
           }
         }
