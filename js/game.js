@@ -176,6 +176,20 @@ function Game(c)
     }
   }
   
+  function moveHero(x, y)
+  {
+    if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height && !walls[x][y]
+          && !(hero.x === x && hero.y === y) && !(goal.x === x && goal.y === y))
+    {
+      hero.x = x;
+      hero.y = y;
+      hero.drawX = x * CELL_SIZE;
+      hero.drawY = y * CELL_SIZE;
+      findPath();
+      draw();
+    }
+  }
+  
   function findPath()
   {    
     function isValidChild(x, y)
@@ -469,6 +483,7 @@ function Game(c)
     init: init,
     addWall: addWall,
     removeWall: removeWall,
+    moveHero: moveHero,
     reset: reset,
     isRunning: isRunning,
     needsReset: needsReset,
@@ -519,19 +534,22 @@ $(document).ready(function() {
         gameWasRunning = true;
       }
       
+      // get the x and y coordinates of the mousedown
+      var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
+      var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
+      
       if (selectedButton === Selected.ADD_WALLS)
       {
-        var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
-        var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
         game.addWall(x, y);
       }
       else if (selectedButton === Selected.REMOVE_WALLS)
       {
-        var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
-        var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
         game.removeWall(x, y);
       }
-      
+      else if (selectedButton === Selected.MOVE_HERO)
+      {
+        game.moveHero(x, y);
+      }
     });
     
   $(window).mouseup(function(event)
@@ -558,10 +576,14 @@ $(document).ready(function() {
   {
     if (!game.needsReset())
     {
+      /* Try to remove "btn-info" class from all selector buttons
+       * before adding it back to the correct button.
+       */
       $("#add-walls-button").removeClass("btn-info");
       $("#remove-walls-button").removeClass("btn-info");
       $("#move-hero-button").removeClass("btn-info");
       $("#move-goal-button").removeClass("btn-info");
+      
       if (choice === Selected.ADD_WALLS)
       {
         $("#add-walls-button").addClass("btn-info");
@@ -571,6 +593,11 @@ $(document).ready(function() {
       {
         $("#remove-walls-button").addClass("btn-info");
         selectedButton = Selected.REMOVE_WALLS;
+      }
+      else if (choice === Selected.MOVE_HERO)
+      {
+        $("#move-hero-button").addClass("btn-info");
+        selectedButton = Selected.MOVE_HERO;
       }
     }
   }
@@ -583,6 +610,11 @@ $(document).ready(function() {
   $("#remove-walls-button").on("click", function(event)
   {
     select(Selected.REMOVE_WALLS);
+  });
+  
+  $("#move-hero-button").on("click", function(event)
+  {
+    select(Selected.MOVE_HERO);
   });
   
   // keyboard shortcuts
@@ -611,6 +643,11 @@ $(document).ready(function() {
       keyDown.REMOVE_WALLS = true;
       select(Selected.REMOVE_WALLS);
     }
+    else if (event.which === KeyCodes.MOVE_HERO && !KeyDown.MOVE_HERO)
+    {
+      keyDown.MOVE_HERO = true;
+      select(Selected.MOVE_HERO);
+    }
   });
   
   $(document).keyup(function(event)
@@ -630,6 +667,10 @@ $(document).ready(function() {
     else if (event.which === KeyCodes.REMOVE_WALLS)
     {
       keyDown.REMOVE_WALLS = false;
+    }
+    else if (event.which === KeyCodes.MOVE_HERO)
+    {
+      keyDown.MOVE_HERO = false;
     }
   });
 });
