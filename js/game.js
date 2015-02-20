@@ -15,12 +15,14 @@ Colors = Object.freeze({HERO: "#cf5300",
 Selected = Object.freeze({ADD_WALLS: 0,
                           REMOVE_WALLS: 1,
                           MOVE_HERO: 2,
-                          MOVE_GOAL: 3
+                          MOVE_GOAL: 3,
                          });
 KeyCodes = Object.freeze({RESET: 13, // enter
                           TOGGLE: 32, // space 
                           ADD_WALLS: 65, // A
-                          REMOVE_WALLS: 82 // R
+                          REMOVE_WALLS: 82, // R
+                          MOVE_HERO: 72, // H
+                          MOVE_GOAL: 71 // G
                          });
 
 function Game(c)
@@ -620,6 +622,7 @@ $(document).ready(function() {
   // keyboard shortcuts
   $(document).keydown(function(event)
   {
+    console.log(event.which);
     if (event.which === KeyCodes.RESET && !keyDown.RESET)
     {
       keyDown.RESET = true;
@@ -643,7 +646,7 @@ $(document).ready(function() {
       keyDown.REMOVE_WALLS = true;
       select(Selected.REMOVE_WALLS);
     }
-    else if (event.which === KeyCodes.MOVE_HERO && !KeyDown.MOVE_HERO)
+    else if (event.which === KeyCodes.MOVE_HERO && !keyDown.MOVE_HERO)
     {
       keyDown.MOVE_HERO = true;
       select(Selected.MOVE_HERO);
