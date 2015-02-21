@@ -33,6 +33,8 @@ function Game(c)
   var path = [];
   var running = false;
   var gameNeedsReset = false;
+  var hero;
+  var goal;
   
   var width = canvas.width / CELL_SIZE;
   var height = canvas.height / CELL_SIZE;
@@ -153,7 +155,20 @@ function Game(c)
     }
     else
     {
-      ctx.fillRect(hero.x * CELL_SIZE, hero.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      if (gameNeedsReset)
+      {
+        ctx.fillRect(hero.x * CELL_SIZE, hero.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      }
+      else
+      {
+        // on page load and after reset point down-right
+        ctx.beginPath();
+        ctx.moveTo(hero.drawX + OFFSET_DIAG_SMALL, hero.drawY);
+        ctx.lineTo(hero.drawX, hero.drawY + OFFSET_DIAG_SMALL);
+        ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + CELL_SIZE);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
   }
   
@@ -187,6 +202,18 @@ function Game(c)
       hero.y = y;
       hero.drawX = x * CELL_SIZE;
       hero.drawY = y * CELL_SIZE;
+      findPath();
+      draw();
+    }
+  }
+  
+  function moveGoal(x, y)
+  {
+    if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height && !walls[x][y]
+          && !(hero.x === x && hero.y === y) && !(goal.x === x && goal.y === y))
+    {
+      goal.x = x;
+      goal.y = y;
       findPath();
       draw();
     }
@@ -486,6 +513,7 @@ function Game(c)
     addWall: addWall,
     removeWall: removeWall,
     moveHero: moveHero,
+    moveGoal: moveGoal,
     reset: reset,
     isRunning: isRunning,
     needsReset: needsReset,
@@ -552,6 +580,10 @@ $(document).ready(function() {
       {
         game.moveHero(x, y);
       }
+      else if (selectedButton === Selected.MOVE_GOAL)
+      {
+        game.moveGoal(x, y);
+      }
     });
     
   $(window).mouseup(function(event)
@@ -601,6 +633,11 @@ $(document).ready(function() {
         $("#move-hero-button").addClass("btn-info");
         selectedButton = Selected.MOVE_HERO;
       }
+      else if (choice === Selected.MOVE_GOAL)
+      {
+        $("#move-goal-button").addClass("btn-info");
+        selectedButton = Selected.MOVE_GOAL;
+      }
     }
   }
   
@@ -617,6 +654,11 @@ $(document).ready(function() {
   $("#move-hero-button").on("click", function(event)
   {
     select(Selected.MOVE_HERO);
+  });
+  
+  $("#move-goal-button").on("click", function(event)
+  {
+    select(Selected.MOVE_GOAL);
   });
   
   // keyboard shortcuts
@@ -651,6 +693,11 @@ $(document).ready(function() {
       keyDown.MOVE_HERO = true;
       select(Selected.MOVE_HERO);
     }
+    else if (event.which === KeyCodes.MOVE_GOAL && !keyDown.MOVE_GOAL)
+    {
+      keyDown.MOVE_GOAL = true;
+      select(Selected.MOVE_GOAL);
+    }
   });
   
   $(document).keyup(function(event)
@@ -674,6 +721,10 @@ $(document).ready(function() {
     else if (event.which === KeyCodes.MOVE_HERO)
     {
       keyDown.MOVE_HERO = false;
+    }
+    else if (event.which === KeyCodes.MOVE_GOAL)
+    {
+      keyDown.MOVE_GOAL = false;
     }
   });
 });
