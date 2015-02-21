@@ -179,6 +179,10 @@ function Game(c)
           && !(goal.x === x && goal.y === y)
           && (path.length === 0 || !(path[path.length-1].x === x && path[path.length-1].y === y)))
     {
+      if (isRunning())
+      {
+        pause();
+      }
       walls[x][y] = true;
       draw();
     }
@@ -188,6 +192,10 @@ function Game(c)
   {
     if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height && walls[x][y])
     {
+      if (isRunning())
+      {
+        pause();
+      }
       walls[x][y] = false;
       draw();
     }
@@ -198,12 +206,21 @@ function Game(c)
     if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height && !walls[x][y]
           && !(hero.x === x && hero.y === y) && !(goal.x === x && goal.y === y))
     {
+      var wasRunning = running;
+      if (wasRunning)
+      {
+        pause();
+      }
       hero.x = x;
       hero.y = y;
       hero.drawX = x * CELL_SIZE;
       hero.drawY = y * CELL_SIZE;
       findPath();
       draw();
+      if (wasRunning)
+      {
+        start();
+      }
     }
   }
   
@@ -212,10 +229,19 @@ function Game(c)
     if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height && !walls[x][y]
           && !(hero.x === x && hero.y === y) && !(goal.x === x && goal.y === y))
     {
+      var wasRunning = running;
+      if (wasRunning)
+      {
+        pause();
+      }
       goal.x = x;
       goal.y = y;
       findPath();
       draw();
+      if (wasRunning)
+      {
+        start();
+      }
     }
   }
   
@@ -372,11 +398,6 @@ function Game(c)
     running = true;
     
     findPath();
-    for (var i = 0; i < path.length; ++i)
-    {
-      var pos = path[i];
-      console.log(i + ": (" + pos.x + "," + pos.y + ")");
-    }
     
     // turn start button into pause button
     $("#start-pause-button").removeClass("btn-success").addClass("btn-danger");
@@ -558,38 +579,34 @@ $(document).ready(function() {
   $('#game-canvas').mousedown(function(event)
     {
       mousedown = true;
-      if (game.isRunning())
-      {
-        game.toggle();
-        gameWasRunning = true;
-      }
       
       // get the x and y coordinates of the mousedown
       var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
       var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
       
-      if (selectedButton === Selected.ADD_WALLS)
+      switch(selectedButton)
       {
-        game.addWall(x, y);
-      }
-      else if (selectedButton === Selected.REMOVE_WALLS)
-      {
-        game.removeWall(x, y);
-      }
-      else if (selectedButton === Selected.MOVE_HERO)
-      {
-        game.moveHero(x, y);
-      }
-      else if (selectedButton === Selected.MOVE_GOAL)
-      {
-        game.moveGoal(x, y);
+        case Selected.ADD_WALLS:
+          gameWasRunning = game.isRunning();
+          game.addWall(x, y);
+          break;
+        case Selected.REMOVE_WALLS:
+          gameWasRunning = game.isRunning();
+          game.removeWalls(x, y);
+          break;
+        case Selected.MOVE_HERO:
+          game.moveHero(x, y);
+          break;
+        case Selected.MOVE_GOAL:
+          game.moveGoal(x, y);
+          break;
       }
     });
     
   $(window).mouseup(function(event)
     {
       mousedown = false;
-      if (gameWasRunning)
+      if (gameWasRunning && !game.isRunning())
       {
         game.toggle();
         gameWasRunning = false;
@@ -664,7 +681,6 @@ $(document).ready(function() {
   // keyboard shortcuts
   $(document).keydown(function(event)
   {
-    console.log(event.which);
     if (event.which === KeyCodes.RESET && !keyDown.RESET)
     {
       keyDown.RESET = true;
