@@ -673,7 +673,6 @@ $(document).ready(function() {
   
   function select(choice)
   {
-    console.log(choice)
     if (!game.needsReset())
     {
       switch(choice)
