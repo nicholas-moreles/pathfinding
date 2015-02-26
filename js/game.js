@@ -871,6 +871,7 @@ $(document).ready(function() {
   
   $(document).keyup(function(event)
   {
+    event.preventDefault(); // stop space and enter from clicking buttons again
     switch(event.which)
     {
       case KeyCodes.RESET:
