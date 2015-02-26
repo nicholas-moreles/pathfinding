@@ -640,7 +640,7 @@ $(document).ready(function() {
           break;
         case Selected.REMOVE_WALLS:
           gameWasRunning = game.isRunning();
-          game.removeWalls(x, y);
+          game.removeWall(x, y);
           break;
         case Selected.MOVE_HERO:
           game.moveHero(x, y);
