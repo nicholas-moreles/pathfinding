@@ -12,15 +12,25 @@ Colors = Object.freeze({HERO: "#cf5300",
                         WALL: "grey",
                         CANVAS: "white"
                        });
+Speed = Object.freeze({SLOW: [200, 280],
+                       NORMAL: [150, 210],
+                       FAST: [100, 140]
+                      });
 Selected = Object.freeze({DIAG: 0,
-                          ADD_WALLS: 2,
-                          REMOVE_WALLS: 3,
-                          MOVE_HERO: 4,
-                          MOVE_GOAL: 5                          
+                          SLOW_SPEED: 1,
+                          NORMAL_SPEED: 2,
+                          FAST_SPEED: 3,
+                          ADD_WALLS: 4,
+                          REMOVE_WALLS: 5,
+                          MOVE_HERO: 6,
+                          MOVE_GOAL: 7                          
                          });
 KeyCodes = Object.freeze({RESET: 13, // enter
                           TOGGLE: 32, // space
                           DIAG: 68, // D
+                          SLOW_SPEED: 83, // S
+                          NORMAL_SPEED: 78, // N
+                          FAST_SPEED: 70, // F
                           ADD_WALLS: 65, // A
                           REMOVE_WALLS: 82, // R
                           MOVE_HERO: 72, // H
@@ -36,6 +46,7 @@ function Game(c)
   var running = false;
   var gameNeedsReset = false;
   var diagAllowed = true;
+  var gameSpeed = Speed.NORMAL;
   var hero;
   var goal;
   
@@ -418,7 +429,7 @@ function Game(c)
     var nextY = nextCell.y * CELL_SIZE;
     var dirX = nextCell.x - hero.x;
     var dirY = nextCell.y - hero.y;
-    var timeBetweenCells = (dirX === 0 || dirY === 0) ? 150 : 210;
+    var timeBetweenCells = (dirX === 0 || dirY === 0) ? gameSpeed[0] : gameSpeed[1];
     
     time = setInterval(function() { // execute function below every 16ms
       var now = +new Date;
@@ -440,7 +451,7 @@ function Game(c)
           nextY = nextCell.y * CELL_SIZE;
           dirX = nextCell.x - hero.x;
           dirY = nextCell.y - hero.y;
-          timeBetweenCells = (dirX === 0 || dirY === 0) ? 150 : 210;
+          timeBetweenCells = (dirX === 0 || dirY === 0) ? gameSpeed[0] : gameSpeed[1];
         }
       }
       
@@ -508,6 +519,22 @@ function Game(c)
     return diagAllowed;
   }
   
+  function setSpeed(choice)
+  {
+    switch(choice)
+    {
+      case Selected.SLOW_SPEED:
+        gameSpeed = Speed.SLOW;
+        break;
+      case Selected.NORMAL_SPEED:
+        gameSpeed = Speed.NORMAL;
+        break;
+      case Selected.FAST_SPEED:
+        gameSpeed = Speed.FAST;
+        break;
+    }
+  }
+  
   function isRunning()
   {
     return running;
@@ -561,6 +588,7 @@ function Game(c)
     isRunning: isRunning,
     needsReset: needsReset,
     toggleDiag: toggleDiag,
+    setSpeed: setSpeed,
     toggle: toggle
   };
 }
@@ -653,6 +681,11 @@ $(document).ready(function() {
         case Selected.DIAG:
           selectDiag();
           break;
+        case Selected.SLOW_SPEED:
+        case Selected.NORMAL_SPEED:
+        case Selected.FAST_SPEED:
+          selectSpeed(choice);
+          break;
         case Selected.ADD_WALLS:
         case Selected.REMOVE_WALLS:
         case Selected.MOVE_HERO:
@@ -670,6 +703,27 @@ $(document).ready(function() {
     {
       $("#diag-moves-button").addClass("btn-info");
     }
+  }
+  
+  function selectSpeed(choice)
+  {
+    $("#slow-speed-button").removeClass("btn-info");
+    $("#normal-speed-button").removeClass("btn-info");
+    $("#fast-speed-button").removeClass("btn-info");
+    switch(choice)
+    {
+      case Selected.SLOW_SPEED:
+        $("#slow-speed-button").addClass("btn-info");
+        break;
+      case Selected.NORMAL_SPEED:
+        $("#normal-speed-button").addClass("btn-info");
+        break;
+      case Selected.FAST_SPEED:
+        $("#fast-speed-button").addClass("btn-info");
+        break;
+    }
+    
+    game.setSpeed(choice);
   }
   
   function selectLeftClickButton(choice)
@@ -695,6 +749,21 @@ $(document).ready(function() {
         break;
     }
   }
+  
+  $("#slow-speed-button").on("click", function(event)
+  {
+    select(Selected.SLOW_SPEED);
+  });
+  
+  $("#normal-speed-button").on("click", function(event)
+  {
+    select(Selected.NORMAL_SPEED);
+  });
+  
+  $("#fast-speed-button").on("click", function(event)
+  {
+    select(Selected.FAST_SPEED);
+  });
   
   $("#diag-moves-button").on("click", function(event)
   {
@@ -748,6 +817,27 @@ $(document).ready(function() {
           select(Selected.DIAG);
         }
         break;
+      case KeyCodes.SLOW_SPEED:
+        if (!keyDown.SLOW_SPEED)
+        {
+          keyDown.SLOW_SPEED = true;
+          select(Selected.SLOW_SPEED);
+        }
+        break;
+      case KeyCodes.NORMAL_SPEED:
+        if (!keyDown.NORMAL_SPEED)
+        {
+          keyDown.NORMAL_SPEED = true;
+          select(Selected.NORMAL_SPEED);
+        }
+        break;
+      case KeyCodes.FAST_SPEED:
+        if (!keyDown.FAST_SPEED)
+        {
+          keyDown.FAST_SPEED = true;
+          select(Selected.FAST_SPEED);
+        }
+        break;
       case KeyCodes.ADD_WALLS:
         if (!keyDown.ADD_WALLS)
         {
@@ -791,6 +881,15 @@ $(document).ready(function() {
         break;
       case KeyCodes.DIAG:
         keyDown.DIAG = false;
+        break;
+      case KeyCodes.SLOW_SPEED:
+        keyDown.SLOW_SPEED = false;
+        break;
+      case KeyCodes.NORMAL_SPEED:
+        keyDown.NORMAL_SPEED = false;
+        break;
+      case KeyCodes.FAST_SPEED:
+        keyDown.FAST_SPEED = false;
         break;
       case KeyCodes.ADD_WALLS:
         keyDown.ADD_WALLS = false;
