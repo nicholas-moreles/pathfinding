@@ -12,13 +12,15 @@ Colors = Object.freeze({HERO: "#cf5300",
                         WALL: "grey",
                         CANVAS: "white"
                        });
-Selected = Object.freeze({ADD_WALLS: 0,
-                          REMOVE_WALLS: 1,
-                          MOVE_HERO: 2,
-                          MOVE_GOAL: 3,
+Selected = Object.freeze({DIAG: 0,
+                          ADD_WALLS: 2,
+                          REMOVE_WALLS: 3,
+                          MOVE_HERO: 4,
+                          MOVE_GOAL: 5                          
                          });
 KeyCodes = Object.freeze({RESET: 13, // enter
-                          TOGGLE: 32, // space 
+                          TOGGLE: 32, // space
+                          DIAG: 68, // D
                           ADD_WALLS: 65, // A
                           REMOVE_WALLS: 82, // R
                           MOVE_HERO: 72, // H
@@ -33,6 +35,7 @@ function Game(c)
   var path = [];
   var running = false;
   var gameNeedsReset = false;
+  var diagAllowed = true;
   var hero;
   var goal;
   
@@ -273,13 +276,17 @@ function Game(c)
       {
         for (var yOffset = -1; yOffset <= 1; ++yOffset)
         {
-          var nextX = this.x + xOffset;
-          var nextY = this.y + yOffset;
-          
-          if (isValidChild(nextX, nextY))
+          // if diagonal moves are prohibited, don't check them
+          if (diagAllowed || xOffset === 0 || yOffset === 0)
           {
-            var nextMoveCost = this.cost + (xOffset === 0 || yOffset === 0 ? STR_COST : DIAG_COST);
-            children.push(new Node(nextX, nextY, nextMoveCost, this));
+            var nextX = this.x + xOffset;
+            var nextY = this.y + yOffset;
+            
+            if (isValidChild(nextX, nextY))
+            {
+              var nextMoveCost = this.cost + (xOffset === 0 || yOffset === 0 ? STR_COST : DIAG_COST);
+              children.push(new Node(nextX, nextY, nextMoveCost, this));
+            }
           }
         }
       }
@@ -486,6 +493,21 @@ function Game(c)
     draw();
   }
   
+  function toggleDiag()
+  {
+    var wasRunning = running;
+    if (wasRunning)
+    {
+      pause();
+    }
+    diagAllowed = !diagAllowed
+    if (wasRunning)
+    {
+      start();
+    }    
+    return diagAllowed;
+  }
+  
   function isRunning()
   {
     return running;
@@ -538,6 +560,7 @@ function Game(c)
     reset: reset,
     isRunning: isRunning,
     needsReset: needsReset,
+    toggleDiag: toggleDiag,
     toggle: toggle
   };
 }
@@ -549,11 +572,8 @@ $(document).ready(function() {
   var game = Game(canvas);
   var mousedown = false;
   var gameWasRunning = false;
-  var selectedButton = Selected.ADD_WALLS;
-  var keyDown = {RESET: false,
-                 TOGGLE: false,
-                 ADD_WALLS: false,
-                 REMOVE_WALLS: false};
+  var selectedLeftClickButton = Selected.ADD_WALLS;
+  var keyDown = {};
   
   game.init();
   
@@ -561,13 +581,13 @@ $(document).ready(function() {
     {
       if (mousedown && !game.needsReset())
       {
-        if (selectedButton === Selected.ADD_WALLS)
+        if (selectedLeftClickButton === Selected.ADD_WALLS)
         {
           var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
           var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
           game.addWall(x, y);
         }
-        else if (selectedButton === Selected.REMOVE_WALLS)
+        else if (selectedLeftClickButton === Selected.REMOVE_WALLS)
         {
           var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
           var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
@@ -584,7 +604,7 @@ $(document).ready(function() {
       var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
       var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
       
-      switch(selectedButton)
+      switch(selectedLeftClickButton)
       {
         case Selected.ADD_WALLS:
           gameWasRunning = game.isRunning();
@@ -625,38 +645,61 @@ $(document).ready(function() {
   
   function select(choice)
   {
+    console.log(choice)
     if (!game.needsReset())
     {
-      /* Try to remove "btn-info" class from all selector buttons
-       * before adding it back to the correct button.
-       */
-      $("#add-walls-button").removeClass("btn-info");
-      $("#remove-walls-button").removeClass("btn-info");
-      $("#move-hero-button").removeClass("btn-info");
-      $("#move-goal-button").removeClass("btn-info");
-      
-      if (choice === Selected.ADD_WALLS)
+      switch(choice)
       {
-        $("#add-walls-button").addClass("btn-info");
-        selectedButton = Selected.ADD_WALLS;
-      }
-      else if (choice === Selected.REMOVE_WALLS)
-      {
-        $("#remove-walls-button").addClass("btn-info");
-        selectedButton = Selected.REMOVE_WALLS;
-      }
-      else if (choice === Selected.MOVE_HERO)
-      {
-        $("#move-hero-button").addClass("btn-info");
-        selectedButton = Selected.MOVE_HERO;
-      }
-      else if (choice === Selected.MOVE_GOAL)
-      {
-        $("#move-goal-button").addClass("btn-info");
-        selectedButton = Selected.MOVE_GOAL;
+        case Selected.DIAG:
+          selectDiag();
+          break;
+        case Selected.ADD_WALLS:
+        case Selected.REMOVE_WALLS:
+        case Selected.MOVE_HERO:
+        case Selected.MOVE_GOAL:
+          selectLeftClickButton(choice);
+          break;
       }
     }
   }
+  
+  function selectDiag()
+  {
+    $("#diag-moves-button").removeClass("btn-info");
+    if (game.toggleDiag())
+    {
+      $("#diag-moves-button").addClass("btn-info");
+    }
+  }
+  
+  function selectLeftClickButton(choice)
+  {
+    $("#add-walls-button").removeClass("btn-info");
+    $("#remove-walls-button").removeClass("btn-info");
+    $("#move-hero-button").removeClass("btn-info");
+    $("#move-goal-button").removeClass("btn-info");
+    selectedLeftClickButton  = choice;
+    switch(choice)
+    {
+      case Selected.ADD_WALLS:
+        $("#add-walls-button").addClass("btn-info");
+        break;
+      case Selected.REMOVE_WALLS:
+        $("#remove-walls-button").addClass("btn-info");   
+        break;
+      case Selected.MOVE_HERO:
+        $("#move-hero-button").addClass("btn-info");
+        break;
+      case Selected.MOVE_GOAL:
+        $("#move-goal-button").addClass("btn-info");
+        break;
+    }
+  }
+  
+  $("#diag-moves-button").on("click", function(event)
+  {
+    select(Selected.DIAG);
+  });
   
   $("#add-walls-button").on("click", function(event)
   {
@@ -681,66 +724,86 @@ $(document).ready(function() {
   // keyboard shortcuts
   $(document).keydown(function(event)
   {
-    if (event.which === KeyCodes.RESET && !keyDown.RESET)
+    event.preventDefault(); // stop space and enter from clicking buttons again
+    switch(event.which)
     {
-      keyDown.RESET = true;
-      game.reset();
-    }
-    else if (event.which === KeyCodes.TOGGLE && !keyDown.TOGGLE)
-    {
-      if (!game.needsReset())
-      {
-        keyDown.TOGGLE = true;
-        game.toggle();
-      }
-    }
-    else if (event.which === KeyCodes.ADD_WALLS && !keyDown.ADD_WALLS)
-    {
-      keyDown.ADD_WALLS = true;
-      select(Selected.ADD_WALLS);
-    }
-    else if (event.which === KeyCodes.REMOVE_WALLS && !keyDown.REMOVE_WALLS)
-    {
-      keyDown.REMOVE_WALLS = true;
-      select(Selected.REMOVE_WALLS);
-    }
-    else if (event.which === KeyCodes.MOVE_HERO && !keyDown.MOVE_HERO)
-    {
-      keyDown.MOVE_HERO = true;
-      select(Selected.MOVE_HERO);
-    }
-    else if (event.which === KeyCodes.MOVE_GOAL && !keyDown.MOVE_GOAL)
-    {
-      keyDown.MOVE_GOAL = true;
-      select(Selected.MOVE_GOAL);
+      case KeyCodes.RESET:
+        if (!keyDown.RESET)
+        {
+          keyDown.RESET = true;
+          game.reset();
+        }
+        break;
+      case KeyCodes.TOGGLE:
+        if (!keyDown.TOGGLE)
+        {
+          keyDown.TOGGLE = true;
+          game.toggle();
+        }
+        break;
+      case KeyCodes.DIAG:
+        if (!keyDown.DIAG)
+        {
+          keyDown.DIAG = true;
+          select(Selected.DIAG);
+        }
+        break;
+      case KeyCodes.ADD_WALLS:
+        if (!keyDown.ADD_WALLS)
+        {
+          keyDown.ADD_WALLS = true;
+          select(Selected.ADD_WALLS);
+        }
+        break;
+      case KeyCodes.REMOVE_WALLS:
+        if (!keyDown.REMOVE_WALLS)
+        {
+          keyDown.REMOVE_WALLS = true;
+          select(Selected.REMOVE_WALLS);
+        }
+        break;
+      case KeyCodes.MOVE_HERO:
+        if (!keyDown.MOVE_HERO)
+        {
+          keyDown.MOVE_HERO = true;
+          select(Selected.MOVE_HERO);
+        }
+        break;
+      case KeyCodes.MOVE_GOAL:
+        if (!keyDown.MOVE_GOAL)
+        {
+          keyDown.MOVE_GOAL = true;
+          select(Selected.MOVE_GOAL);
+        }
+        break;
     }
   });
   
   $(document).keyup(function(event)
   {
-    if (event.which === KeyCodes.RESET)
+    switch(event.which)
     {
-      keyDown.RESET = false;
-    }
-    else if (event.which === KeyCodes.TOGGLE)
-    {
-      keyDown.TOGGLE = false;
-    }
-    else if (event.which === KeyCodes.ADD_WALLS)
-    {
-      keyDown.ADD_WALLS = false;
-    }
-    else if (event.which === KeyCodes.REMOVE_WALLS)
-    {
-      keyDown.REMOVE_WALLS = false;
-    }
-    else if (event.which === KeyCodes.MOVE_HERO)
-    {
-      keyDown.MOVE_HERO = false;
-    }
-    else if (event.which === KeyCodes.MOVE_GOAL)
-    {
-      keyDown.MOVE_GOAL = false;
+      case KeyCodes.RESET:
+        keyDown.RESET = false;
+        break;
+      case KeyCodes.TOGGLE:
+        keyDown.TOGGLE = false;
+        break;
+      case KeyCodes.DIAG:
+        keyDown.DIAG = false;
+        break;
+      case KeyCodes.ADD_WALLS:
+        keyDown.ADD_WALLS = false;
+        break;
+      case KeyCodes.REMOVE_WALLS:
+        keyDown.REMOVE_WALLS = false;
+        break;
+      case KeyCodes.MOVE_HERO:
+        keyDown.MOVE_HERO = false;
+        break;
+      case KeyCodes.MOVE_GOAL:
+        keyDown.MOVE_GOAL = false;
+        break;
     }
   });
 });
