@@ -596,6 +596,8 @@ function Game(c)
 // executed when document has loaded
 $(document).ready(function() {
   var canvas = document.getElementById('game-canvas');
+  var width = canvas.width / CELL_SIZE;
+  var height = canvas.height / CELL_SIZE;
   var canvasOffset = $('#game-canvas').offset();
   var game = Game(canvas);
   var mousedown = false;
@@ -603,23 +605,46 @@ $(document).ready(function() {
   var selectedLeftClickButton = Selected.ADD_WALLS;
   var keyDown = {};
   
+  var prevMouse;
+  
   game.init();
   
   $('#game-canvas').mousemove(function(event)
     {
-      if (mousedown && !game.needsReset())
+      if (mousedown && !game.needsReset()
+        && (selectedLeftClickButton === Selected.ADD_WALLS
+              || selectedLeftClickButton === Selected.REMOVE_WALLS))
       {
-        if (selectedLeftClickButton === Selected.ADD_WALLS)
+        var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
+        var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
+        if (x >= 0 && x < width && y >= 0 && y < height)
         {
-          var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
-          var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
-          game.addWall(x, y);
+          currentMouse = [x, y];
+          if (prevMouse === null)
+          {
+            prevMouse = currentMouse;
+          }
+          path = findPath2(prevMouse, currentMouse, width, height, false);
+          
+          if (selectedLeftClickButton === Selected.ADD_WALLS)
+          {
+            for (var i in path)
+            {
+              game.addWall(path[i][0], path[i][1]);
+            }
+          }
+          else if (selectedLeftClickButton === Selected.REMOVE_WALLS)
+          {
+            game.removeWall(x, y);
+          }
+          
+          prevMouse = currentMouse;
         }
-        else if (selectedLeftClickButton === Selected.REMOVE_WALLS)
+        else
         {
-          var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
-          var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
-          game.removeWall(x, y);
+          // prevent some unnecessary walls from being added
+          // does not catch all, needs to be revisited
+          prevMouse = null;
         }
       }
     });
@@ -631,6 +656,7 @@ $(document).ready(function() {
       // get the x and y coordinates of the mousedown
       var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
       var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
+      prevMouse = [x,y];
       
       switch(selectedLeftClickButton)
       {
@@ -905,4 +931,114 @@ $(document).ready(function() {
         break;
     }
   });
+  
+  function manhattanDistance(a, b)
+  {
+    return (Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]));
+  }
 });
+
+function findPath2(a, b, width, height, diagAllowed)
+  {    
+    function isValidChild(x, y)
+    {
+      return x >= 0 && x < width && y >= 0 && y < height && !visited[x][y];
+    }
+    
+    function mdHeuristic(x1, y1, x2, y2)
+    {
+      return (Math.abs(x1 - x2) + Math.abs(y1 - y2)) * STR_COST;
+    }
+    
+    function Node(x, y, cost, parent)
+    {
+      this.x = x;
+      this.y = y;
+      this.cost = cost;
+      this.parent = parent;
+    }
+    
+    Node.prototype.getChildren = function()
+    {
+      var children = [];
+      
+      for (var xOffset = -1; xOffset <= 1; ++xOffset)
+      {
+        for (var yOffset = -1; yOffset <= 1; ++yOffset)
+        {
+          // if diagonal moves are prohibited, don't check them
+          if (diagAllowed || xOffset === 0 || yOffset === 0)
+          {
+            var nextX = this.x + xOffset;
+            var nextY = this.y + yOffset;
+            
+            if (isValidChild(nextX, nextY))
+            {
+              var nextMoveCost = this.cost + (xOffset === 0 || yOffset === 0 ? STR_COST : DIAG_COST);
+              children.push(new Node(nextX, nextY, nextMoveCost, this));
+            }
+          }
+        }
+      }
+
+      return children;
+    };   
+  
+    // early return
+    if (a[0] === b[0] && a[1] === b[1])
+    {
+      return [];
+    }
+    
+    // 2d array: true if visited, false otherwise
+    var visited = [];
+    for (var x = 0; x < width; ++x)
+    {
+      var row = [];
+      for (var y = 0; y < height; ++y)
+      {
+        row.push(false);
+      }
+      visited.push(row);
+    }
+    
+    // kick off the search
+    var frontier = new goog.structs.PriorityQueue();
+    frontier.enqueue(0, new Node(a[0], a[1], 0, null));
+    
+    var count = 0;
+    
+    while (!frontier.isEmpty())
+    {
+      var currNode = frontier.dequeue();
+      
+      if (currNode.x === b[0] && currNode.y === b[1])
+      {
+        // success, return the path
+        
+        var solutionPath = [];
+        var i = 0;
+        while (currNode.parent !== null)
+        {
+          solutionPath.push([currNode.x, currNode.y]);
+          currNode = currNode.parent;
+        }
+        console.log(solutionPath);
+        return solutionPath;
+      }
+      
+      if (!visited[currNode.x][currNode.y])
+      {
+        visited[currNode.x][currNode.y] = true;
+        var children = currNode.getChildren(); // only gets valid, non-visited children
+        
+        for (var i = 0; i < children.length; ++i)
+        {
+          var currChild = children[i];
+          var currChildCostEstimate = currChild.cost + mdHeuristic(currChild.x, currChild.y, b[0], b[1]);
+          frontier.enqueue(currChildCostEstimate, currChild);
+        }
+      }
+    }
+    return [];
+  }
