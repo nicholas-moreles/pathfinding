@@ -1,3 +1,13 @@
+var nextSpinningHeroDirection = Object.freeze({"0,0": [1, 1],
+                                               "0,1": [-1,1],
+                                               "-1,1": [-1,0],
+                                               "-1,0": [-1,-1],
+                                               "-1,-1": [0,-1],
+                                               "0,-1": [1,-1],
+                                               "1,-1": [1,0],
+                                               "1,0": [1,1],
+                                               "1,1": [0,1]});
+
 function Game(c)
 {
   var canvas = c;
@@ -5,12 +15,13 @@ function Game(c)
   var walls = [];
   var path = [];
   var running = false;
-  var gameNeedsReset = false;
   var diagAllowed = true;
   var gameSpeed = Speed.NORMAL;
   var hero;
   var goal;
   var ctx = canvas.getContext('2d');
+  var currentHeroDir = [0,0];
+  var spinCount = 0;
 
   function draw()
   {
@@ -37,102 +48,96 @@ function Game(c)
     
     // draw hero
     ctx.fillStyle = Colors.HERO;
-    if (path.length > 0)
+    
+    if (path.length === 0)
     {
-      var dirX = path[path.length-1].x - hero.x;
-      var dirY = path[path.length-1].y - hero.y;
-      
-      ctx.beginPath();
-      if (dirX > 0)
+      if (++spinCount >= 8)
       {
-        if (dirY > 0)
-        {
-          // down-right
-          ctx.moveTo(hero.drawX + OFFSET_DIAG_SMALL, hero.drawY);
-          ctx.lineTo(hero.drawX, hero.drawY + OFFSET_DIAG_SMALL);
-          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + CELL_SIZE);
-        }
-        else if (dirY < 0)
-        {
-          // up-right
-          ctx.moveTo(hero.drawX, hero.drawY + OFFSET_DIAG_LARGE);
-          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY);
-          ctx.lineTo(hero.drawX + OFFSET_DIAG_SMALL, hero.drawY + CELL_SIZE);
-        }
-        else
-        {
-          // right
-          ctx.moveTo(hero.drawX, hero.drawY + OFFSET_STR_SMALL);
-          ctx.lineTo(hero.drawX, hero.drawY + OFFSET_STR_LARGE);
-          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + CELL_SIZE/2);
-        }
+        spinCount = 0;
+        currentHeroDir = nextSpinningHeroDirection[String(currentHeroDir)];
       }
-      else if (dirX <0)
-      {
-        if (dirY > 0)
-        {
-          // down-left
-          ctx.moveTo(hero.drawX + OFFSET_DIAG_LARGE, hero.drawY);
-          ctx.lineTo(hero.drawX, hero.drawY + CELL_SIZE);
-          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_DIAG_SMALL);
-        }
-        else if (dirY < 0)
-        {
-          // up-left
-          ctx.moveTo(hero.drawX, hero.drawY);
-          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_DIAG_LARGE);
-          ctx.lineTo(hero.drawX + OFFSET_DIAG_LARGE, hero.drawY + CELL_SIZE);
-        }
-        else
-        {
-          // left
-          ctx.moveTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_STR_SMALL);
-          ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_STR_LARGE);
-          ctx.lineTo(hero.drawX, hero.drawY + CELL_SIZE/2);
-        }
-      }
-      else
-      {
-        if (dirY > 0)
-        {
-          // down
-          ctx.moveTo(hero.drawX + OFFSET_STR_SMALL, hero.drawY);
-          ctx.lineTo(hero.drawX + OFFSET_STR_LARGE, hero.drawY);
-          ctx.lineTo(hero.drawX + CELL_SIZE/2, hero.drawY + CELL_SIZE);
-        }
-        else
-        {
-          // up
-          ctx.moveTo(hero.drawX + OFFSET_STR_SMALL, hero.drawY + CELL_SIZE);
-          ctx.lineTo(hero.drawX + OFFSET_STR_LARGE, hero.drawY + CELL_SIZE);
-          ctx.lineTo(hero.drawX + CELL_SIZE/2, hero.drawY);
-        }
-      }
-      ctx.closePath();
-      ctx.fill();
     }
-    else
+    else 
     {
-      if (gameNeedsReset)
+      currentHeroDir = [path[path.length-1].x - hero.x, path[path.length-1].y - hero.y];
+    }
+
+    var dirX = currentHeroDir[0];
+    var dirY = currentHeroDir[1];
+    
+    ctx.beginPath();
+    if (dirX > 0)
+    {
+      if (dirY > 0)
       {
-        ctx.fillRect(hero.x * CELL_SIZE, hero.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-      }
-      else
-      {
-        // on page load and after reset point down-right
-        ctx.beginPath();
+        // down-right
         ctx.moveTo(hero.drawX + OFFSET_DIAG_SMALL, hero.drawY);
         ctx.lineTo(hero.drawX, hero.drawY + OFFSET_DIAG_SMALL);
         ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + CELL_SIZE);
-        ctx.closePath();
-        ctx.fill();
+      }
+      else if (dirY < 0)
+      {
+        // up-right
+        ctx.moveTo(hero.drawX, hero.drawY + OFFSET_DIAG_LARGE);
+        ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY);
+        ctx.lineTo(hero.drawX + OFFSET_DIAG_SMALL, hero.drawY + CELL_SIZE);
+      }
+      else
+      {
+        // right
+        ctx.moveTo(hero.drawX, hero.drawY + OFFSET_STR_SMALL);
+        ctx.lineTo(hero.drawX, hero.drawY + OFFSET_STR_LARGE);
+        ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + CELL_SIZE/2);
       }
     }
+    else if (dirX < 0)
+    {
+      if (dirY > 0)
+      {
+        // down-left
+        ctx.moveTo(hero.drawX + OFFSET_DIAG_LARGE, hero.drawY);
+        ctx.lineTo(hero.drawX, hero.drawY + CELL_SIZE);
+        ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_DIAG_SMALL);
+      }
+      else if (dirY < 0)
+      {
+        // up-left
+        ctx.moveTo(hero.drawX, hero.drawY);
+        ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_DIAG_LARGE);
+        ctx.lineTo(hero.drawX + OFFSET_DIAG_LARGE, hero.drawY + CELL_SIZE);
+      }
+      else
+      {
+        // left
+        ctx.moveTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_STR_SMALL);
+        ctx.lineTo(hero.drawX + CELL_SIZE, hero.drawY + OFFSET_STR_LARGE);
+        ctx.lineTo(hero.drawX, hero.drawY + CELL_SIZE/2);
+      }
+    }
+    else
+    {
+      if (dirY > 0)
+      {
+        // down
+        ctx.moveTo(hero.drawX + OFFSET_STR_SMALL, hero.drawY);
+        ctx.lineTo(hero.drawX + OFFSET_STR_LARGE, hero.drawY);
+        ctx.lineTo(hero.drawX + CELL_SIZE/2, hero.drawY + CELL_SIZE);
+      }
+      else
+      {
+        // up
+        ctx.moveTo(hero.drawX + OFFSET_STR_SMALL, hero.drawY + CELL_SIZE);
+        ctx.lineTo(hero.drawX + OFFSET_STR_LARGE, hero.drawY + CELL_SIZE);
+        ctx.lineTo(hero.drawX + CELL_SIZE/2, hero.drawY);
+      }
+    }
+    ctx.closePath();
+    ctx.fill();
   }
   
   function addWall(x, y)
   {
-    if (!gameNeedsReset && inBoundsAndNotWall(x, y, walls)
+    if (inBoundsAndNotWall(x, y, walls)
           && !(hero.x === x && hero.y === y)
           && !(goal.x === x && goal.y === y)
           // don't add a wall to the next cell in the path
@@ -146,7 +151,7 @@ function Game(c)
   
   function removeWall(x, y)
   {
-    if (!gameNeedsReset && inBounds(x, y) && walls[x][y])
+    if (inBounds(x, y) && walls[x][y])
     {
       pauseIfRunning();
       walls[x][y] = false;
@@ -156,7 +161,7 @@ function Game(c)
   
   function moveHero(x, y)
   {
-    if (!gameNeedsReset && inBoundsAndNotWall(x, y, walls)
+    if (inBoundsAndNotWall(x, y, walls)
           && !(hero.x === x && hero.y === y) && !(goal.x === x && goal.y === y))
     {
       pauseIfRunning();
@@ -171,7 +176,7 @@ function Game(c)
   
   function moveGoal(x, y)
   {
-    if (!gameNeedsReset && inBoundsAndNotWall(x, y, walls)
+    if (inBoundsAndNotWall(x, y, walls)
           && !(hero.x === x && hero.y === y) && !(goal.x === x && goal.y === y))
     {
       pauseIfRunning();
@@ -188,17 +193,6 @@ function Game(c)
       var next = path.pop();
       hero.x = next.x;
       hero.y = next.y;
-    }
-    else
-    {
-      if (hero.x === goal.x && hero.y === goal.y)
-      {
-        gameOver(true);
-      }
-      else
-      {
-        gameOver(false);
-      }
     }
   }
   
@@ -221,6 +215,8 @@ function Game(c)
     walls[10][10] = true;
     walls[10][9] = true;
     walls[9][10] = true;
+    
+    path = aStar(hero, goal, walls, diagAllowed);
     
     draw();
   }
@@ -287,7 +283,6 @@ function Game(c)
   function reset()
   {
     pause();
-    gameNeedsReset = false;
     
     // return the buttons to the correct state
     $("#start-pause-button").show();
@@ -360,30 +355,6 @@ function Game(c)
     }
   }
   
-  function needsReset()
-  {
-    return gameNeedsReset;
-  }
-  
-  function gameOver(goalFound)
-  {
-    pause();
-    path = [];
-    gameNeedsReset = true;
-    if (goalFound)
-    {
-      $("#start-pause-button").hide();
-      $("#reset-button").removeClass("btn-warning").addClass("btn-success");
-      $("#reset-button").html('Game over! The goal was found! Click to play again!');
-    }
-    else
-    {
-      $("#start-pause-button").hide();
-      $("#reset-button").removeClass("btn-warning").addClass("btn-danger");
-      $("#reset-button").html('Game over! No path to the goal exists! Click to play again!');
-    }
-  }
-  
   function toggle() {
     if (running)
     {
@@ -391,10 +362,7 @@ function Game(c)
     }
     else
     {
-      if (!gameNeedsReset)
-      {
-        start();
-      }
+      start();
     }
   }
   
@@ -406,7 +374,6 @@ function Game(c)
     moveGoal: moveGoal,
     reset: reset,
     isRunning: isRunning,
-    needsReset: needsReset,
     toggleDiag: toggleDiag,
     setSpeed: setSpeed,
     toggle: toggle

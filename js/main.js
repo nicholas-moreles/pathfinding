@@ -26,9 +26,8 @@ $(document).ready(function() {
   
   $('#game-canvas').mousemove(function(event)
     {
-      if (mousedown && !game.needsReset()
-        && (selectedLeftClickButton === Selected.ADD_WALLS
-              || selectedLeftClickButton === Selected.REMOVE_WALLS))
+      if (mousedown && (selectedLeftClickButton === Selected.ADD_WALLS
+                        || selectedLeftClickButton === Selected.REMOVE_WALLS))
       {
         var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
         var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
@@ -114,25 +113,22 @@ $(document).ready(function() {
   
   function select(choice)
   {
-    if (!game.needsReset())
+    switch(choice)
     {
-      switch(choice)
-      {
-        case Selected.DIAG:
-          selectDiag();
-          break;
-        case Selected.SLOW_SPEED:
-        case Selected.NORMAL_SPEED:
-        case Selected.FAST_SPEED:
-          selectSpeed(choice);
-          break;
-        case Selected.ADD_WALLS:
-        case Selected.REMOVE_WALLS:
-        case Selected.MOVE_HERO:
-        case Selected.MOVE_GOAL:
-          selectLeftClickButton(choice);
-          break;
-      }
+      case Selected.DIAG:
+        selectDiag();
+        break;
+      case Selected.SLOW_SPEED:
+      case Selected.NORMAL_SPEED:
+      case Selected.FAST_SPEED:
+        selectSpeed(choice);
+        break;
+      case Selected.ADD_WALLS:
+      case Selected.REMOVE_WALLS:
+      case Selected.MOVE_HERO:
+      case Selected.MOVE_GOAL:
+        selectLeftClickButton(choice);
+        break;
     }
   }
   
