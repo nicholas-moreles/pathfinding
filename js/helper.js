@@ -5,6 +5,40 @@ var DIAG_COST = 14; // diagonal move
 var CELL_SIZE = 16;
 var WIDTH;
 var HEIGHT;
+var OFFSET_STR_SMALL = 2;
+var OFFSET_STR_LARGE = 14;
+var OFFSET_DIAG_SMALL = 8.5;
+var OFFSET_DIAG_LARGE = 7.5;
+
+var Colors = Object.freeze({HERO: "#cf5300",
+                            GOAL: "green",
+                            WALL: "grey",
+                            CANVAS: "white"
+                           });
+var Speed = Object.freeze({SLOW: [200, 280],
+                           NORMAL: [150, 210],
+                           FAST: [100, 140]
+                          });
+var Selected = Object.freeze({DIAG: 0,
+                              SLOW_SPEED: 1,
+                              NORMAL_SPEED: 2,
+                              FAST_SPEED: 3,
+                              ADD_WALLS: 4,
+                              REMOVE_WALLS: 5,
+                              MOVE_HERO: 6,
+                              MOVE_GOAL: 7                          
+                             });
+var KeyCodes = Object.freeze({RESET: 13, // enter
+                              TOGGLE: 32, // space
+                              DIAG: 68, // D
+                              SLOW_SPEED: 83, // S
+                              NORMAL_SPEED: 78, // N
+                              FAST_SPEED: 70, // F
+                              ADD_WALLS: 65, // A
+                              REMOVE_WALLS: 82, // R
+                              MOVE_HERO: 72, // H
+                              MOVE_GOAL: 71 // G
+                             });
 
 function Hero(x, y)
 {
@@ -50,13 +84,22 @@ Node.prototype.getChildren = function(walls, visited, diagAllowed)
       }
     }
   }
-
   return children;
 };
 
+function inBounds(x, y)
+{
+  return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
+}
+
+function inBoundsAndNotWall(x, y, walls)
+{
+  return inBounds(x, y) && !walls[x][y];
+}
+
 function isValidChild(x, y, walls, visited)
 {
-  return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT && !walls[x][y] && !visited[x][y];
+  return inBoundsAndNotWall(x, y, walls) && !visited[x][y];
 }
 
 function mdHeuristic(a, b)
