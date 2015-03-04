@@ -271,6 +271,14 @@ function Game(c)
       return (Math.abs(x1 - x2) + Math.abs(y1 - y2)) * STR_COST;
     }
     
+    function dsHeuristic(x1, y1, x2, y2)
+    {
+      var xDist = Math.abs(x1 - x2);
+      var yDist = Math.abs(y1 - y2);
+      return (xDist > yDist ? (DIAG_COST * yDist + STR_COST * (xDist-yDist))
+                            : (DIAG_COST * xDist + STR_COST * (yDist-xDist)));
+    }
+    
     function Node(x, y, cost, parent)
     {
       this.x = x;
@@ -330,6 +338,7 @@ function Game(c)
     frontier.enqueue(0, new Node(hero.x, hero.y, 0, null));
     
     var count = 0;
+    var heuristic = diagAllowed ? dsHeuristic : mdHeuristic;
     
     while (!frontier.isEmpty())
     {
@@ -358,7 +367,7 @@ function Game(c)
         for (var i = 0; i < children.length; ++i)
         {
           var currChild = children[i];
-          var currChildCostEstimate = currChild.cost + mdHeuristic(currChild.x, currChild.y, goal.x, goal.y);
+          var currChildCostEstimate = currChild.cost + heuristic(currChild.x, currChild.y, goal.x, goal.y);
           frontier.enqueue(currChildCostEstimate, currChild);
         }
       }
@@ -1023,7 +1032,6 @@ function findPath2(a, b, width, height, diagAllowed)
           solutionPath.push([currNode.x, currNode.y]);
           currNode = currNode.parent;
         }
-        console.log(solutionPath);
         return solutionPath;
       }
       
