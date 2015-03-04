@@ -306,7 +306,7 @@ function Game(c)
     }
     
     // remove the path
-    path = [];
+    path = aStar(hero, goal, walls, diagAllowed);
     
     draw();
   }
