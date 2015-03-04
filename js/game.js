@@ -1,12 +1,7 @@
-goog.require('goog.structs.PriorityQueue');
-
-CELL_SIZE = 16; // must be divisible evenly by the canvas width and height
 OFFSET_STR_SMALL = 2;
 OFFSET_STR_LARGE = 14;
 OFFSET_DIAG_SMALL = 8.5;
 OFFSET_DIAG_LARGE = 7.5;
-STR_COST = 10; // horizontal or vertical move
-DIAG_COST = 14; // diagonal move
 Colors = Object.freeze({HERO: "#cf5300",
                         GOAL: "green",
                         WALL: "grey",
@@ -53,20 +48,6 @@ function Game(c)
   var width = canvas.width / CELL_SIZE;
   var height = canvas.height / CELL_SIZE;
   var ctx = canvas.getContext('2d');
-  
-  function Hero(x, y)
-  {
-    this.x = x;
-    this.y = y;
-    this.drawX = x;
-    this.drawY = y;
-  }
-  
-  function Position(x, y)
-  {
-    this.x = x;
-    this.y = y;
-  }
 
   function draw()
   {
@@ -229,7 +210,7 @@ function Game(c)
       hero.y = y;
       hero.drawX = x * CELL_SIZE;
       hero.drawY = y * CELL_SIZE;
-      findPath();
+      path = aStar(hero, goal, walls, diagAllowed);
       draw();
       if (wasRunning)
       {
@@ -250,7 +231,7 @@ function Game(c)
       }
       goal.x = x;
       goal.y = y;
-      findPath();
+      path = aStar(hero, goal, walls, diagAllowed);
       draw();
       if (wasRunning)
       {
@@ -259,122 +240,7 @@ function Game(c)
     }
   }
   
-  function findPath()
-  {    
-    function isValidChild(x, y)
-    {
-      return x >= 0 && x < width && y >= 0 && y < height && !walls[x][y] && !visited[x][y];
-    }
-    
-    function mdHeuristic(x1, y1, x2, y2)
-    {
-      return (Math.abs(x1 - x2) + Math.abs(y1 - y2)) * STR_COST;
-    }
-    
-    function dsHeuristic(x1, y1, x2, y2)
-    {
-      var xDist = Math.abs(x1 - x2);
-      var yDist = Math.abs(y1 - y2);
-      return (xDist > yDist ? (DIAG_COST * yDist + STR_COST * (xDist-yDist))
-                            : (DIAG_COST * xDist + STR_COST * (yDist-xDist)));
-    }
-    
-    function Node(x, y, cost, parent)
-    {
-      this.x = x;
-      this.y = y;
-      this.cost = cost;
-      this.parent = parent;
-    }
-    
-    Node.prototype.getChildren = function()
-    {
-      var children = [];
-      
-      for (var xOffset = -1; xOffset <= 1; ++xOffset)
-      {
-        for (var yOffset = -1; yOffset <= 1; ++yOffset)
-        {
-          // if diagonal moves are prohibited, don't check them
-          if (diagAllowed || xOffset === 0 || yOffset === 0)
-          {
-            var nextX = this.x + xOffset;
-            var nextY = this.y + yOffset;
-            
-            if (isValidChild(nextX, nextY))
-            {
-              var nextMoveCost = this.cost + (xOffset === 0 || yOffset === 0 ? STR_COST : DIAG_COST);
-              children.push(new Node(nextX, nextY, nextMoveCost, this));
-            }
-          }
-        }
-      }
-
-      return children;
-    };   
-    
   
-    // early return
-    if (hero.x === goal.x && hero.y === goal.y)
-    {
-      path = [];
-      return;
-    }
-    
-    // 2d array: true if visited, false otherwise
-    var visited = [];
-    for (var x = 0; x < width; ++x)
-    {
-      var row = [];
-      for (var y = 0; y < height; ++y)
-      {
-        row.push(false);
-      }
-      visited.push(row);
-    }
-    
-    // kick off the search
-    var frontier = new goog.structs.PriorityQueue();
-    frontier.enqueue(0, new Node(hero.x, hero.y, 0, null));
-    
-    var count = 0;
-    var heuristic = diagAllowed ? dsHeuristic : mdHeuristic;
-    
-    while (!frontier.isEmpty())
-    {
-      var currNode = frontier.dequeue();
-      
-      if (currNode.x === goal.x && currNode.y === goal.y)
-      {
-        // success, return the path
-        
-        var solutionPath = [];
-        var i = 0;
-        while (currNode.parent !== null)
-        {
-          solutionPath.push(new Position(currNode.x, currNode.y));
-          currNode = currNode.parent;
-        }
-        path = solutionPath;
-        return;
-      }
-      
-      if (!visited[currNode.x][currNode.y])
-      {
-        visited[currNode.x][currNode.y] = true;
-        var children = currNode.getChildren(); // only gets valid, non-visited children
-        
-        for (var i = 0; i < children.length; ++i)
-        {
-          var currChild = children[i];
-          var currChildCostEstimate = currChild.cost + heuristic(currChild.x, currChild.y, goal.x, goal.y);
-          frontier.enqueue(currChildCostEstimate, currChild);
-        }
-      }
-    }
-    path = [];
-    gameOver(false);
-  }
   
   function update(path) {
     if (path.length > 0)
@@ -424,7 +290,7 @@ function Game(c)
   function start() {
     running = true;
     
-    findPath();
+    path = aStar(hero, goal, walls, diagAllowed);
     
     // turn start button into pause button
     $("#start-pause-button").removeClass("btn-success").addClass("btn-danger");
@@ -618,6 +484,17 @@ $(document).ready(function() {
   
   game.init();
   
+  var noWalls = []; // used to fill wall gaps
+  for (var x = 0; x < WIDTH; ++x)
+  {
+    var row = []
+    for (var y = 0; y < HEIGHT; ++y)
+    {
+      row.push(false);
+    }
+    noWalls.push(row);
+  }  
+  
   $('#game-canvas').mousemove(function(event)
     {
       if (mousedown && !game.needsReset()
@@ -626,27 +503,29 @@ $(document).ready(function() {
       {
         var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
         var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
-        if (x >= 0 && x < width && y >= 0 && y < height)
+        if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT)
         {
-          currentMouse = [x, y];
+          var currentMouse = new Position(x, y);
           if (prevMouse === null)
           {
             prevMouse = currentMouse;
           }
-          path = findPath2(prevMouse, currentMouse, width, height, false);
+          var path = aStar(prevMouse, currentMouse, noWalls, false);
           
           if (selectedLeftClickButton === Selected.ADD_WALLS)
           {
             for (var i in path)
             {
-              game.addWall(path[i][0], path[i][1]);
+              game.addWall(path[i].x, path[i].y);
             }
           }
           else if (selectedLeftClickButton === Selected.REMOVE_WALLS)
           {
-            game.removeWall(x, y);
+            for (var i in path)
+            {
+              game.removeWall(path[i].x, path[i].y);
+            }
           }
-          
           prevMouse = currentMouse;
         }
         else
@@ -665,7 +544,7 @@ $(document).ready(function() {
       // get the x and y coordinates of the mousedown
       var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
       var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
-      prevMouse = [x,y];
+      prevMouse = new Position(x, y);
       
       switch(selectedLeftClickButton)
       {
@@ -940,113 +819,4 @@ $(document).ready(function() {
         break;
     }
   });
-  
-  function manhattanDistance(a, b)
-  {
-    return (Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]));
-  }
 });
-
-function findPath2(a, b, width, height, diagAllowed)
-  {    
-    function isValidChild(x, y)
-    {
-      return x >= 0 && x < width && y >= 0 && y < height && !visited[x][y];
-    }
-    
-    function mdHeuristic(x1, y1, x2, y2)
-    {
-      return (Math.abs(x1 - x2) + Math.abs(y1 - y2)) * STR_COST;
-    }
-    
-    function Node(x, y, cost, parent)
-    {
-      this.x = x;
-      this.y = y;
-      this.cost = cost;
-      this.parent = parent;
-    }
-    
-    Node.prototype.getChildren = function()
-    {
-      var children = [];
-      
-      for (var xOffset = -1; xOffset <= 1; ++xOffset)
-      {
-        for (var yOffset = -1; yOffset <= 1; ++yOffset)
-        {
-          // if diagonal moves are prohibited, don't check them
-          if (diagAllowed || xOffset === 0 || yOffset === 0)
-          {
-            var nextX = this.x + xOffset;
-            var nextY = this.y + yOffset;
-            
-            if (isValidChild(nextX, nextY))
-            {
-              var nextMoveCost = this.cost + (xOffset === 0 || yOffset === 0 ? STR_COST : DIAG_COST);
-              children.push(new Node(nextX, nextY, nextMoveCost, this));
-            }
-          }
-        }
-      }
-
-      return children;
-    };   
-  
-    // early return
-    if (a[0] === b[0] && a[1] === b[1])
-    {
-      return [];
-    }
-    
-    // 2d array: true if visited, false otherwise
-    var visited = [];
-    for (var x = 0; x < width; ++x)
-    {
-      var row = [];
-      for (var y = 0; y < height; ++y)
-      {
-        row.push(false);
-      }
-      visited.push(row);
-    }
-    
-    // kick off the search
-    var frontier = new goog.structs.PriorityQueue();
-    frontier.enqueue(0, new Node(a[0], a[1], 0, null));
-    
-    var count = 0;
-    
-    while (!frontier.isEmpty())
-    {
-      var currNode = frontier.dequeue();
-      
-      if (currNode.x === b[0] && currNode.y === b[1])
-      {
-        // success, return the path
-        
-        var solutionPath = [];
-        var i = 0;
-        while (currNode.parent !== null)
-        {
-          solutionPath.push([currNode.x, currNode.y]);
-          currNode = currNode.parent;
-        }
-        return solutionPath;
-      }
-      
-      if (!visited[currNode.x][currNode.y])
-      {
-        visited[currNode.x][currNode.y] = true;
-        var children = currNode.getChildren(); // only gets valid, non-visited children
-        
-        for (var i = 0; i < children.length; ++i)
-        {
-          var currChild = children[i];
-          var currChildCostEstimate = currChild.cost + mdHeuristic(currChild.x, currChild.y, b[0], b[1]);
-          frontier.enqueue(currChildCostEstimate, currChild);
-        }
-      }
-    }
-    return [];
-  }
