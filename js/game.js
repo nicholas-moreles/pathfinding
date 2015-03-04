@@ -44,22 +44,19 @@ function Game(c)
   var gameSpeed = Speed.NORMAL;
   var hero;
   var goal;
-  
-  var width = canvas.width / CELL_SIZE;
-  var height = canvas.height / CELL_SIZE;
   var ctx = canvas.getContext('2d');
 
   function draw()
   {
     // draw background
     ctx.fillStyle = Colors.CANVAS;
-    ctx.fillRect(0, 0, width * CELL_SIZE, height * CELL_SIZE);
+    ctx.fillRect(0, 0, WIDTH * CELL_SIZE, HEIGHT * CELL_SIZE);
     
     // draw walls
     ctx.fillStyle = Colors.WALL;
-    for (var x = 0; x < width; ++x)
+    for (var x = 0; x < WIDTH; ++x)
     {
-      for (var y = 0; y < height; ++y)
+      for (var y = 0; y < HEIGHT; ++y)
       {
         if (walls[x][y])
         {
@@ -169,7 +166,7 @@ function Game(c)
   
   function addWall(x, y)
   {
-    if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height
+    if (!gameNeedsReset && x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT
           && !walls[x][y] && !(hero.x === x && hero.y === y)
           && !(goal.x === x && goal.y === y)
           && (path.length === 0 || !(path[path.length-1].x === x && path[path.length-1].y === y)))
@@ -185,7 +182,7 @@ function Game(c)
   
   function removeWall(x, y)
   {
-    if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height && walls[x][y])
+    if (!gameNeedsReset && x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT && walls[x][y])
     {
       if (isRunning())
       {
@@ -198,7 +195,7 @@ function Game(c)
   
   function moveHero(x, y)
   {
-    if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height && !walls[x][y]
+    if (!gameNeedsReset && x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT && !walls[x][y]
           && !(hero.x === x && hero.y === y) && !(goal.x === x && goal.y === y))
     {
       var wasRunning = running;
@@ -221,7 +218,7 @@ function Game(c)
   
   function moveGoal(x, y)
   {
-    if (!gameNeedsReset && x >= 0 && x < width && y >= 0 && y < height && !walls[x][y]
+    if (!gameNeedsReset && x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT && !walls[x][y]
           && !(hero.x === x && hero.y === y) && !(goal.x === x && goal.y === y))
     {
       var wasRunning = running;
@@ -263,17 +260,15 @@ function Game(c)
   }
   
   function init() {    
-    // create hero
+    // create hero and goal
     hero = new Hero(0, 0);
-    
-    // create goal
-    goal = new Position(width - 1, height - 1);
+    goal = new Position(WIDTH - 1, HEIGHT - 1);
     
     // initially, there are no walls
-    for (var x = 0; x < width; ++x)
+    for (var x = 0; x < WIDTH; ++x)
     {
       var row = [];
-      for (var y = 0; y < height; ++y)
+      for (var y = 0; y < HEIGHT; ++y)
       {
         row.push(false);
       }
@@ -361,13 +356,13 @@ function Game(c)
     hero.y = 0;
     hero.drawX = 0;
     hero.drawY = 0;
-    goal.x = width - 1;
-    goal.y = height - 1;
+    goal.x = WIDTH - 1;
+    goal.y = HEIGHT - 1;
     
     // remove all walls
-    for (var x = 0; x < width; ++x)
+    for (var x = 0; x < WIDTH; ++x)
     {
-      for (var y = 0; y < height; ++y)
+      for (var y = 0; y < HEIGHT; ++y)
       {
         walls[x][y] = false;
       }
@@ -471,8 +466,8 @@ function Game(c)
 // executed when document has loaded
 $(document).ready(function() {
   var canvas = document.getElementById('game-canvas');
-  var width = canvas.width / CELL_SIZE;
-  var height = canvas.height / CELL_SIZE;
+  WIDTH = canvas.width / CELL_SIZE;
+  HEIGHT = canvas.height / CELL_SIZE;
   var canvasOffset = $('#game-canvas').offset();
   var game = Game(canvas);
   var mousedown = false;

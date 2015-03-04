@@ -6,12 +6,6 @@ var CELL_SIZE = 16;
 var WIDTH;
 var HEIGHT;
 
-$(document).ready( function() {
-  var canvas = document.getElementById('game-canvas');
-  WIDTH = canvas.width / CELL_SIZE;
-  HEIGHT = canvas.height / CELL_SIZE;
-});
-
 function Hero(x, y)
 {
   this.x = x;
