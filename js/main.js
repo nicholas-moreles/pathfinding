@@ -10,10 +10,6 @@ $(document).ready(function() {
   var keyDown = {};
   var prevMouse;
   
-  game.init();
-  
-  // used as a dummy set of walls in filling the wall gaps
-  var noWalls = [];
   for (var x = 0; x < WIDTH; ++x)
   {
     var row = [];
@@ -21,85 +17,97 @@ $(document).ready(function() {
     {
       row.push(false);
     }
-    noWalls.push(row);
+    NO_WALLS.push(row);
   }  
   
-  $('#game-canvas').mousemove(function(event)
+  game.init();
+  
+  $('#change-map').change(function()
+  {
+    switch(this.value)
     {
-      if (mousedown && (selectedLeftClickButton === Selected.ADD_WALLS
-                        || selectedLeftClickButton === Selected.REMOVE_WALLS))
-      {
-        var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
-        var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
-        if (inBounds(x, y))
-        {
-          var currentMouse = new Position(x, y);
-          if (prevMouse === null)
-          {
-            prevMouse = currentMouse;
-          }
-          var path = aStar(prevMouse, currentMouse, noWalls, false);
-          
-          if (selectedLeftClickButton === Selected.ADD_WALLS)
-          {
-            for (var i in path)
-            {
-              game.addWall(path[i].x, path[i].y);
-            }
-          }
-          else if (selectedLeftClickButton === Selected.REMOVE_WALLS)
-          {
-            for (var i in path)
-            {
-              game.removeWall(path[i].x, path[i].y);
-            }
-          }
-          prevMouse = currentMouse;
-        }
-        else
-        {
-          // prevent some unnecessary walls from being added
-          // does not catch all, needs to be revisited
-          prevMouse = null;
-        }
-      }
-    });
-    
-  $('#game-canvas').mousedown(function(event)
+      case Map.DEFAULT:
+        loadDefaultMap(game);
+        break;
+    }
+  });
+  
+  $('#game-canvas').mousemove(function(event)
+  {
+    if (mousedown && (selectedLeftClickButton === Selected.ADD_WALLS
+                      || selectedLeftClickButton === Selected.REMOVE_WALLS))
     {
       var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
       var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
-      mousedown = true;
-      prevMouse = new Position(x, y);
-      
-      gameWasRunning = game.isRunning();
-      
-      switch(selectedLeftClickButton)
+      if (inBounds(x, y))
       {
-        case Selected.ADD_WALLS:
-          game.addWall(x, y);
-          break;
-        case Selected.REMOVE_WALLS:
-          game.removeWall(x, y);
-          break;
-        case Selected.MOVE_HERO:
-          game.moveHero(x, y);
-          break;
-        case Selected.MOVE_GOAL:
-          game.moveGoal(x, y);
-          break;
+        var currentMouse = new Position(x, y);
+        if (prevMouse === null)
+        {
+          prevMouse = currentMouse;
+        }
+        var path = aStar(prevMouse, currentMouse, NO_WALLS, false);
+        
+        if (selectedLeftClickButton === Selected.ADD_WALLS)
+        {
+          for (var i in path)
+          {
+            game.addWall(path[i].x, path[i].y);
+          }
+        }
+        else if (selectedLeftClickButton === Selected.REMOVE_WALLS)
+        {
+          for (var i in path)
+          {
+            game.removeWall(path[i].x, path[i].y);
+          }
+        }
+        prevMouse = currentMouse;
       }
-    });
+      else
+      {
+        // prevent some unnecessary walls from being added
+        // does not catch all, needs to be revisited
+        prevMouse = null;
+      }
+    }
+  });
+    
+  $('#game-canvas').mousedown(function(event)
+  {
+    var x = Math.floor((event.pageX - canvasOffset.left) / CELL_SIZE);
+    var y = Math.floor((event.pageY - canvasOffset.top) / CELL_SIZE);
+    mousedown = true;
+    prevMouse = new Position(x, y);
+    
+    gameWasRunning = game.isRunning();
+    
+    switch(selectedLeftClickButton)
+    {
+      case Selected.ADD_WALLS:
+        game.addWall(x, y);
+        break;
+      case Selected.REMOVE_WALLS:
+        game.removeWall(x, y);
+        break;
+      case Selected.MOVE_HERO:
+        game.moveHero(x, y);
+        break;
+      case Selected.MOVE_GOAL:
+        game.moveGoal(x, y);
+        break;
+    }
+  });
     
   $(window).mouseup(function(event)
+  {
+    mousedown = false;
+    if (gameWasRunning && !game.isRunning())
     {
-      mousedown = false;
-      if (gameWasRunning && !game.isRunning())
-      {
-        game.toggle();
-        gameWasRunning = false;
-      }
-    });
+      game.toggle();
+      gameWasRunning = false;
+    }
+  });
   
   $("#start-pause-button").on("click", function(event)
   {

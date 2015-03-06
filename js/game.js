@@ -165,10 +165,7 @@ function Game(c)
           && !(hero.x === x && hero.y === y) && !(goal.x === x && goal.y === y))
     {
       pauseIfRunning();
-      hero.x = x;
-      hero.y = y;
-      hero.drawX = x * CELL_SIZE;
-      hero.drawY = y * CELL_SIZE;
+      hero = new Hero(x, y);
       path = aStar(hero, goal, walls, diagAllowed);
       draw();
     }
@@ -180,8 +177,7 @@ function Game(c)
           && !(hero.x === x && hero.y === y) && !(goal.x === x && goal.y === y))
     {
       pauseIfRunning();
-      goal.x = x;
-      goal.y = y;
+      goal = new Position(x, y);
       path = aStar(hero, goal, walls, diagAllowed);
       draw();
     }
@@ -194,31 +190,6 @@ function Game(c)
       hero.x = next.x;
       hero.y = next.y;
     }
-  }
-  
-  function init() {    
-    // create hero and goal
-    hero = new Hero(0, 0);
-    goal = new Position(WIDTH - 1, HEIGHT - 1);
-    
-    // initially, there are no walls
-    for (var x = 0; x < WIDTH; ++x)
-    {
-      var row = [];
-      for (var y = 0; y < HEIGHT; ++y)
-      {
-        row.push(false);
-      }
-      walls.push(row);
-    }
-    
-    walls[10][10] = true;
-    walls[10][9] = true;
-    walls[9][10] = true;
-    
-    path = aStar(hero, goal, walls, diagAllowed);
-    
-    draw();
   }
   
   function start() {
@@ -280,49 +251,46 @@ function Game(c)
     clearInterval(time);
   }
   
+  function init()
+  {
+    for (var x = 0; x < WIDTH; ++x)
+    {
+      var row = []
+      for (var y = 0; y < HEIGHT; ++y)
+      {
+        row.push(false);
+      }
+      walls.push(row);
+    }
+    reset();
+  }
+  
   function reset()
   {
-    pause();
-    
-    // return the buttons to the correct state
-    $("#start-pause-button").show();
-    $("#reset-button").removeClass("btn-success").removeClass("btn-danger").addClass("btn-warning");
-    $("#reset-button").html('Reset');
-      
-    hero.x = 0;
-    hero.y = 0;
-    hero.drawX = 0;
-    hero.drawY = 0;
-    goal.x = WIDTH - 1;
-    goal.y = HEIGHT - 1;
-    
-    // remove all walls
+    loadMap(new Hero(0,0), new Position(WIDTH - 1, HEIGHT - 1), getRandomMap());
+  }
+  
+  function loadMap(newHero, newGoal, newWalls)
+  {
+    pauseIfRunning();
+    hero = newHero;
+    goal = newGoal;
     for (var x = 0; x < WIDTH; ++x)
     {
       for (var y = 0; y < HEIGHT; ++y)
       {
-        walls[x][y] = false;
+        walls[x][y] = newWalls[x][y];
       }
     }
-    
-    // remove the path
     path = aStar(hero, goal, walls, diagAllowed);
-    
     draw();
   }
   
   function toggleDiag()
   {
-    var wasRunning = running;
-    if (wasRunning)
-    {
-      pause();
-    }
+    var wasRunning = pauseIfRunning();
     diagAllowed = !diagAllowed
-    if (wasRunning)
-    {
-      start();
-    }    
+    unpauseIfWasRunning(wasRunning);
     return diagAllowed;
   }
   
@@ -352,6 +320,16 @@ function Game(c)
     if (isRunning())
     {
       pause();
+      return true;
+    }
+    return false;
+  }
+  
+  function unpauseIfWasRunning(wasRunning)
+  {
+    if (wasRunning)
+    {
+      start();
     }
   }
   
@@ -376,6 +354,7 @@ function Game(c)
     isRunning: isRunning,
     toggleDiag: toggleDiag,
     setSpeed: setSpeed,
-    toggle: toggle
+    toggle: toggle,
+    loadMap: loadMap
   };
 }

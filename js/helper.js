@@ -9,7 +9,7 @@ var OFFSET_STR_SMALL = 2;
 var OFFSET_STR_LARGE = 14;
 var OFFSET_DIAG_SMALL = 8.5;
 var OFFSET_DIAG_LARGE = 7.5;
-
+var NO_WALLS = [];
 var Colors = Object.freeze({HERO: "#cf5300",
                             GOAL: "green",
                             WALL: "grey",
@@ -39,13 +39,17 @@ var KeyCodes = Object.freeze({RESET: 13, // enter
                               MOVE_HERO: 72, // H
                               MOVE_GOAL: 71 // G
                              });
+var Map = Object.freeze({DEFAULT: 1,
+                         SPIRAL: 2,
+                         EMPTY: 3,
+                        });
 
 function Hero(x, y)
 {
   this.x = x;
   this.y = y;
-  this.drawX = x;
-  this.drawY = y;
+  this.drawX = x * CELL_SIZE;
+  this.drawY = y * CELL_SIZE;
 }
 
 function Position(x, y)
@@ -173,4 +177,83 @@ function aStar(a, b, walls, diagAllowed)
     }
   }
   return path;
+}
+
+function getRandomMap()
+{
+  var walls = [];
+  var visited = [];
+  for (var x = 0; x < WIDTH; ++x)
+  {
+    var falseRow = [];
+    var trueRow = [];
+    for (var y = 0; y < HEIGHT; ++y)
+    {
+      trueRow.push(true);
+      falseRow.push(false);
+    }
+    walls.push(trueRow);
+    visited.push(falseRow);
+  }
+  randomDFS(new Position(0, 0), new Position(WIDTH-1, HEIGHT-1), NO_WALLS, walls);
+  return walls;
+}
+
+function randomDFS(a, b, walls, solution)
+{
+  var visited = [];
+  for (var x = 0; x < WIDTH; ++x)
+  {
+    var row = [];
+    for (var y = 0; y < HEIGHT; ++y)
+    {
+      row.push(false);
+    }
+    visited.push(row);
+  }
+  
+  var frontier = [];
+  frontier.push(new Node(a.x, a.y, 0, null));
+  
+  while (frontier.length > 0)
+  {
+    var currNode = frontier.pop();
+    
+    if (currNode.x === b.x && currNode.y === b.y)
+    {
+      // success, return the path
+      var i = 0;
+      while (currNode !== null)
+      {
+        solution[currNode.x][currNode.y] = false;
+        currNode = currNode.parent;
+      }
+      return;
+    }
+    
+    if (!visited[currNode.x][currNode.y])
+    {
+      visited[currNode.x][currNode.y] = true;
+      var children = shuffle(currNode.getChildren(walls, visited, false));
+      
+      for (var i = 0; i < children.length; ++i)
+      {
+        var currChild = children[i];
+        frontier.push(currChild);
+      }
+    }
+  }
+  return;
+}
+
+function shuffle(array)
+{
+  for (var i = array.length - 1; i > 0; --i)
+  {
+    var j = Math.floor(Math.random() * (i+1));
+    var temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+  }
+  return array;
 }
