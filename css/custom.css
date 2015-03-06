@@ -3,6 +3,11 @@
   outline: none;
 }
 
+.map-select
+{
+  padding-top: 10px;
+}
+
 #game-canvas
 {
   margin-left: auto;
