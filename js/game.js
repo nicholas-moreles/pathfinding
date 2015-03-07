@@ -273,6 +273,9 @@ function Game(c)
       case Map.SPIRAL:
         loadMap(new Hero(0,0), new Position(19, 19), getMapFromFile("spiral.txt"));
         break;
+      case Map.EMPTY:
+        loadMap(new Hero(0, 0), new Position(WIDTH - 1, HEIGHT - 1), NO_WALLS);
+        break;
       default:
         loadMap(new Hero(0,0), new Position(WIDTH - 1, HEIGHT - 1), getRandomMap());
         break;
@@ -290,9 +293,6 @@ function Game(c)
     pauseIfRunning();
     hero = newHero;
     goal = newGoal;
-    console.log(newWalls[15]);
-    console.log(walls);
-    console.log(newWalls);
     for (var x = 0; x < WIDTH; ++x)
     {
       for (var y = 0; y < HEIGHT; ++y)
@@ -300,7 +300,6 @@ function Game(c)
         walls[y][x] = newWalls[y][x];
       }
     }
-    console.log(walls[15]);
     path = aStar(hero, goal, walls, diagAllowed);
     draw();
   }

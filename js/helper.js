@@ -194,7 +194,6 @@ function getMapFromFile(fileName)
         {
           row.push(lines[y].charAt(x) === "-");
         }
-        if (y == 15) {console.log(row);}
         map.push(row);
       }
     },
@@ -202,7 +201,6 @@ function getMapFromFile(fileName)
         console.log('error');
     }
   });
-  console.log(map);
   return map;
 }
 
