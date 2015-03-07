@@ -123,13 +123,12 @@ function aStar(a, b, walls, diagAllowed)
 {
   var path = [];
   
-  // early return
   if (a.x === b.x && a.y === b.y)
   {
     return path;
   }
   
-  // 2d array: true if visited, false otherwise
+  // create visited 2d array
   var visited = [];
   for (var y = 0; y < HEIGHT; ++y)
   {
@@ -141,33 +140,31 @@ function aStar(a, b, walls, diagAllowed)
     visited.push(row);
   }
   
-  // kick off the search
+  var heuristic = diagAllowed ? dsHeuristic : mdHeuristic;
   var frontier = new goog.structs.PriorityQueue();
   frontier.enqueue(0, new Node(a.x, a.y, 0, null));
-  
-  var heuristic = diagAllowed ? dsHeuristic : mdHeuristic;
   
   while (!frontier.isEmpty())
   {
     var currNode = frontier.dequeue();
-    
-    if (currNode.x === b.x && currNode.y === b.y)
-    {
-      // success, return the path
-      var i = 0;
-      while (currNode.parent !== null)
-      {
-        path.push(new Position(currNode.x, currNode.y));
-        currNode = currNode.parent;
-      }
-      return path;
-    }
-    
     if (!visited[currNode.y][currNode.x])
     {
       visited[currNode.y][currNode.x] = true;
-      var children = currNode.getChildren(walls, visited, diagAllowed); // only gets valid, non-visited children
       
+      // goal check
+      if (currNode.x === b.x && currNode.y === b.y)
+      {
+        var i = 0;
+        while (currNode.parent !== null)
+        {
+          path.push(new Position(currNode.x, currNode.y));
+          currNode = currNode.parent;
+        }
+        return path;
+      }
+    
+      // get children and enqueue
+      var children = currNode.getChildren(walls, visited, diagAllowed);
       for (var i = 0; i < children.length; ++i)
       {
         var currChild = children[i];
@@ -207,78 +204,63 @@ function getMapFromFile(fileName)
 function getRandomMap()
 {
   var walls = [];
-  var visited = [];
-  for (var y = 0; y < HEIGHT; ++y)
-  {
-    var falseRow = [];
-    var trueRow = [];
-    for (var x = 0; x < WIDTH; ++x)
-    {
-      trueRow.push(true);
-      falseRow.push(false);
-    }
-    walls.push(trueRow);
-    visited.push(falseRow);
-  }
-  randomDFS(new Position(0, 0), new Position(WIDTH-1, HEIGHT-1), NO_WALLS, walls);
-  return walls;
-}
-
-function randomDFS(a, b, walls, solution)
-{
-  var visited = [];
   for (var y = 0; y < HEIGHT; ++y)
   {
     var row = [];
-    for (var x = 0; x < HEIGHT; ++x)
+    for (var x = 0; x < WIDTH; ++x)
     {
       row.push(false);
     }
-    visited.push(row);
+    walls.push(row);
   }
-  
-  var frontier = [];
-  frontier.push(new Node(a.x, a.y, 0, null));
-  
-  while (frontier.length > 0)
-  {
-    var currNode = frontier.pop();
-    
-    if (currNode.x === b.x && currNode.y === b.y)
-    {
-      // success, return the path
-      var i = 0;
-      while (currNode !== null)
-      {
-        solution[currNode.y][currNode.x] = false;
-        currNode = currNode.parent;
-      }
-      return;
-    }
-    
-    if (!visited[currNode.y][currNode.x])
-    {
-      visited[currNode.y][currNode.x] = true;
-      var children = shuffle(currNode.getChildren(walls, visited, false));
-      
-      for (var i = 0; i < children.length; ++i)
-      {
-        var currChild = children[i];
-        frontier.push(currChild);
-      }
-    }
-  }
-  return;
+  recursiveDivision(0, WIDTH-1, 0, HEIGHT-1, walls);
+  return walls;
 }
 
-function shuffle(array)
+function recursiveDivision(x0, x1, y0, y1, walls)
 {
-  for (var i = array.length - 1; i > 0; --i)
+  var width = x1-x0;
+  var height = y1-y0;
+  if (width > 1 && height > 1)
   {
-    var j = Math.floor(Math.random() * (i+1));
-    var temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
+    var horizontalCut = width === height ? Math.random() < 0.5 : height > width;
+    var length = horizontalCut ? width : height;
+    
+    var cutX = horizontalCut ? x0 : getRandomInt(x0+1, x1-1);
+    var cutY = horizontalCut ? getRandomInt(y0+1, y1-1) : y0;
+    var x = cutX;
+    var y = cutY;
+    var dx = horizontalCut ? 1 : 0;
+    var dy = horizontalCut ? 0 : 1;
+    
+    var openX = horizontalCut ? getRandomInt(x0, x1) : x;
+    var openY = horizontalCut ? y : getRandomInt(y0, y1);
+    
+    for (var i = 0; i <= length; ++i)
+    {
+      walls[y][x] = !(openX === x && openY === y);
+      x += dx;
+      y += dy;
+    }
+    
+    if (horizontalCut)
+    {
+      recursiveDivision(x0, x1, y0, cutY-1, walls);
+      recursiveDivision(x0, x1, cutY+1, y1, walls);
+      if (inBounds(openX, openY-1)) { walls[openY-1][openX] = false; }
+      if (inBounds(openX, openY+1)) { walls[openY+1][openX] = false; }
+    }
+    else
+    {
+      recursiveDivision(x0, cutX-1, y0, y1, walls);
+      recursiveDivision(cutX+1, x1, y0, y1, walls);
+      if (inBounds(openX-1, openY)) { walls[openY][openX-1] = false; }
+      if (inBounds(openX+1, openY)) { walls[openY][openX+1] = false; }
+    }
   }
-  return array;
+}
+
+function getRandomInt (min, max)
+{
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
