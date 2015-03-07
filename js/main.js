@@ -22,14 +22,9 @@ $(document).ready(function() {
   
   game.init();
   
-  $('#change-map').change(function()
+  $('#change-map').on('change', function()
   {
-    switch(this.value)
-    {
-      case Map.DEFAULT:
-        loadDefaultMap(game);
-        break;
-    }
+    game.setMap(parseInt(this.value));
   });
   
   $('#game-canvas').mousemove(function(event)

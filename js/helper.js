@@ -39,9 +39,9 @@ var KeyCodes = Object.freeze({RESET: 13, // enter
                               MOVE_HERO: 72, // H
                               MOVE_GOAL: 71 // G
                              });
-var Map = Object.freeze({DEFAULT: 1,
+var Map = Object.freeze({RANDOM: 1,
                          SPIRAL: 2,
-                         EMPTY: 3,
+                         EMPTY: 3
                         });
 
 function Hero(x, y)
@@ -98,12 +98,12 @@ function inBounds(x, y)
 
 function inBoundsAndNotWall(x, y, walls)
 {
-  return inBounds(x, y) && !walls[x][y];
+  return inBounds(x, y) && !walls[y][x];
 }
 
 function isValidChild(x, y, walls, visited)
 {
-  return inBoundsAndNotWall(x, y, walls) && !visited[x][y];
+  return inBoundsAndNotWall(x, y, walls) && !visited[y][x];
 }
 
 function mdHeuristic(a, b)
@@ -131,10 +131,10 @@ function aStar(a, b, walls, diagAllowed)
   
   // 2d array: true if visited, false otherwise
   var visited = [];
-  for (var x = 0; x < WIDTH; ++x)
+  for (var y = 0; y < HEIGHT; ++y)
   {
     var row = [];
-    for (var y = 0; y < HEIGHT; ++y)
+    for (var x = 0; x < WIDTH; ++x)
     {
       row.push(false);
     }
@@ -163,9 +163,9 @@ function aStar(a, b, walls, diagAllowed)
       return path;
     }
     
-    if (!visited[currNode.x][currNode.y])
+    if (!visited[currNode.y][currNode.x])
     {
-      visited[currNode.x][currNode.y] = true;
+      visited[currNode.y][currNode.x] = true;
       var children = currNode.getChildren(walls, visited, diagAllowed); // only gets valid, non-visited children
       
       for (var i = 0; i < children.length; ++i)
@@ -179,15 +179,42 @@ function aStar(a, b, walls, diagAllowed)
   return path;
 }
 
+function getMapFromFile(fileName)
+{
+  var map = [];
+  $.ajax({
+    type: "GET",
+    url: "maps/" + fileName,
+    async: false,
+    success: function(content) {
+      var lines = content.split('\n');
+      for (var y = 0 ; y < lines.length ; ++y) {
+        var row = [];
+        for (var x = 0; x < lines[y].length; ++x)
+        {
+          row.push(lines[y].charAt(x) === "-");
+        }
+        if (y == 15) {console.log(row);}
+        map.push(row);
+      }
+    },
+    error: function() {
+        console.log('error');
+    }
+  });
+  console.log(map);
+  return map;
+}
+
 function getRandomMap()
 {
   var walls = [];
   var visited = [];
-  for (var x = 0; x < WIDTH; ++x)
+  for (var y = 0; y < HEIGHT; ++y)
   {
     var falseRow = [];
     var trueRow = [];
-    for (var y = 0; y < HEIGHT; ++y)
+    for (var x = 0; x < WIDTH; ++x)
     {
       trueRow.push(true);
       falseRow.push(false);
@@ -202,10 +229,10 @@ function getRandomMap()
 function randomDFS(a, b, walls, solution)
 {
   var visited = [];
-  for (var x = 0; x < WIDTH; ++x)
+  for (var y = 0; y < HEIGHT; ++y)
   {
     var row = [];
-    for (var y = 0; y < HEIGHT; ++y)
+    for (var x = 0; x < HEIGHT; ++x)
     {
       row.push(false);
     }
@@ -225,15 +252,15 @@ function randomDFS(a, b, walls, solution)
       var i = 0;
       while (currNode !== null)
       {
-        solution[currNode.x][currNode.y] = false;
+        solution[currNode.y][currNode.x] = false;
         currNode = currNode.parent;
       }
       return;
     }
     
-    if (!visited[currNode.x][currNode.y])
+    if (!visited[currNode.y][currNode.x])
     {
-      visited[currNode.x][currNode.y] = true;
+      visited[currNode.y][currNode.x] = true;
       var children = shuffle(currNode.getChildren(walls, visited, false));
       
       for (var i = 0; i < children.length; ++i)

@@ -22,6 +22,7 @@ function Game(c)
   var ctx = canvas.getContext('2d');
   var currentHeroDir = [0,0];
   var spinCount = 0;
+  var resetMap = Map.RANDOM;
 
   function draw()
   {
@@ -35,7 +36,7 @@ function Game(c)
     {
       for (var y = 0; y < HEIGHT; ++y)
       {
-        if (walls[x][y])
+        if (walls[y][x])
         {
           ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         }
@@ -144,17 +145,17 @@ function Game(c)
           && (path.length === 0 || !(path[path.length-1].x === x && path[path.length-1].y === y)))
     {
       pauseIfRunning();
-      walls[x][y] = true;
+      walls[y][x] = true;
       draw();
     }
   }
   
   function removeWall(x, y)
   {
-    if (inBounds(x, y) && walls[x][y])
+    if (inBounds(x, y) && walls[y][x])
     {
       pauseIfRunning();
-      walls[x][y] = false;
+      walls[y][x] = false;
       draw();
     }
   }
@@ -267,7 +268,21 @@ function Game(c)
   
   function reset()
   {
-    loadMap(new Hero(0,0), new Position(WIDTH - 1, HEIGHT - 1), getRandomMap());
+    switch (resetMap)
+    {
+      case Map.SPIRAL:
+        loadMap(new Hero(0,0), new Position(19, 19), getMapFromFile("spiral.txt"));
+        break;
+      default:
+        loadMap(new Hero(0,0), new Position(WIDTH - 1, HEIGHT - 1), getRandomMap());
+        break;
+    }
+  }
+  
+  function setMap(mapType)
+  {
+    resetMap = mapType;
+    reset();
   }
   
   function loadMap(newHero, newGoal, newWalls)
@@ -275,13 +290,17 @@ function Game(c)
     pauseIfRunning();
     hero = newHero;
     goal = newGoal;
+    console.log(newWalls[15]);
+    console.log(walls);
+    console.log(newWalls);
     for (var x = 0; x < WIDTH; ++x)
     {
       for (var y = 0; y < HEIGHT; ++y)
       {
-        walls[x][y] = newWalls[x][y];
+        walls[y][x] = newWalls[y][x];
       }
     }
+    console.log(walls[15]);
     path = aStar(hero, goal, walls, diagAllowed);
     draw();
   }
@@ -351,6 +370,7 @@ function Game(c)
     moveHero: moveHero,
     moveGoal: moveGoal,
     reset: reset,
+    setMap: setMap,
     isRunning: isRunning,
     toggleDiag: toggleDiag,
     setSpeed: setSpeed,
